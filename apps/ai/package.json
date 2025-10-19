@@ -1,0 +1,24 @@
+{
+  "name": "@pablos/ai",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "clean": "rm -rf dist",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.1.3",
+    "fastify": "^4.25.2",
+    "zod": "^3.22.4",
+    "@pablos/contracts": "workspace:*",
+    "@pablos/utils": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "@types/node": "^20.10.6",
+    "tsx": "^4.7.0"
+  }
+}
+

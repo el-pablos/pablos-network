@@ -1,0 +1,40 @@
+{
+  "name": "pablos-network",
+  "version": "1.0.0",
+  "private": true,
+  "description": "OSINT + AppSec orchestrator with real-time WebTUI and AI integration",
+  "scripts": {
+    "healthcheck": "tsx scripts/healthcheck.ts",
+    "dev": "concurrently -n gateway,ai,dns,osint,webdisc,dast -c cyan,magenta,green,yellow,blue,red \"pnpm dev:gateway\" \"pnpm dev:ai\" \"pnpm dev:worker:dns\" \"pnpm dev:worker:osint\" \"pnpm dev:worker:webdiscovery\" \"pnpm dev:worker:dast\"",
+    "dev:gateway": "pnpm --filter @pablos/gateway dev",
+    "dev:ai": "pnpm --filter @pablos/ai dev",
+    "dev:worker:dns": "pnpm --filter @pablos/worker-dns dev",
+    "dev:worker:osint": "pnpm --filter @pablos/worker-osint dev",
+    "dev:worker:webdiscovery": "pnpm --filter @pablos/worker-webdiscovery dev",
+    "dev:worker:dast": "pnpm --filter @pablos/worker-dast dev",
+    "build": "turbo run build",
+    "build:packages": "pnpm --filter @pablos/contracts build && pnpm --filter @pablos/utils build",
+    "lint": "turbo run lint",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "type-check": "turbo run type-check",
+    "test:api": "bash examples/basic-scan.sh"
+  },
+  "workspaces": [
+    "apps/*",
+    "apps/workers/*",
+    "packages/*"
+  ],
+  "devDependencies": {
+    "turbo": "^2.0.0",
+    "typescript": "^5.3.3",
+    "concurrently": "^8.2.2",
+    "tsx": "^4.7.0",
+    "dotenv": "^16.3.1"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.0"
+}
+
