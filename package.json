@@ -5,7 +5,8 @@
   "description": "OSINT + AppSec orchestrator with real-time WebTUI and AI integration",
   "scripts": {
     "healthcheck": "tsx scripts/healthcheck.ts",
-    "dev": "concurrently -n gateway,ai,dns,osint,webdisc,dast -c cyan,magenta,green,yellow,blue,red \"pnpm dev:gateway\" \"pnpm dev:ai\" \"pnpm dev:worker:dns\" \"pnpm dev:worker:osint\" \"pnpm dev:worker:webdiscovery\" \"pnpm dev:worker:dast\"",
+    "dev": "concurrently -n webtui,gateway,ai,dns,osint,webdisc,dast -c white,cyan,magenta,green,yellow,blue,red \"pnpm dev:webtui\" \"pnpm dev:gateway\" \"pnpm dev:ai\" \"pnpm dev:worker:dns\" \"pnpm dev:worker:osint\" \"pnpm dev:worker:webdiscovery\" \"pnpm dev:worker:dast\"",
+    "dev:webtui": "pnpm --filter @pablos/webtui dev",
     "dev:gateway": "pnpm --filter @pablos/gateway dev",
     "dev:ai": "pnpm --filter @pablos/ai dev",
     "dev:worker:dns": "pnpm --filter @pablos/worker-dns dev",
