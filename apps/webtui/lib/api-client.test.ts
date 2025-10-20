@@ -17,10 +17,14 @@ describe('API Client', () => {
     });
 
     const result = await apiClient.get('/test');
-    
+
     expect(global.fetch).toHaveBeenCalledWith(
-      expect.stringContaining('/test'),
-      expect.objectContaining({ method: 'GET' })
+      'http://localhost:4000/test',
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          'Content-Type': 'application/json',
+        }),
+      })
     );
     expect(result).toEqual(mockResponse);
   });

@@ -58,7 +58,7 @@ export class HttpClient {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
-    return response.json();
+    return response.json() as Promise<T>;
   }
 
   async post<T = any>(
@@ -81,7 +81,7 @@ export class HttpClient {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
-    return response.json();
+    return response.json() as Promise<T>;
   }
 }
 

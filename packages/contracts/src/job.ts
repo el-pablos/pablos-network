@@ -38,3 +38,7 @@ export const UpdateJobSchema = z.object({
 
 export type UpdateJob = z.infer<typeof UpdateJobSchema>;
 
+// Backward compatibility aliases
+export const JobCreateSchema = CreateJobSchema;
+export const JobUpdateSchema = UpdateJobSchema;
+

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { FindingSchema, FindingCreateSchema } from './finding';
+import { FindingCreateSchema, CreateFindingSchema } from './finding';
 
 describe('Finding Schema', () => {
   it('should validate a valid finding', () => {
@@ -7,6 +7,7 @@ describe('Finding Schema', () => {
       targetRef: '507f1f77bcf86cd799439011',
       targetFqdn: 'example.com',
       provider: 'dns',
+      category: 'DNS',
       severity: 'high',
       title: 'Subdomain Takeover Risk',
       description: 'Dangling CNAME record detected',
@@ -17,8 +18,12 @@ describe('Finding Schema', () => {
       },
     };
 
-    const result = FindingCreateSchema.safeParse(validFinding);
+    const result = CreateFindingSchema.safeParse(validFinding);
     expect(result.success).toBe(true);
+
+    // Test backward compatibility alias
+    const result2 = FindingCreateSchema.safeParse(validFinding);
+    expect(result2.success).toBe(true);
   });
 
   it('should reject finding with invalid severity', () => {
@@ -26,13 +31,14 @@ describe('Finding Schema', () => {
       targetRef: '507f1f77bcf86cd799439011',
       targetFqdn: 'example.com',
       provider: 'dns',
+      category: 'DNS',
       severity: 'invalid',
       title: 'Test Finding',
       description: 'Test description',
       fingerprint: 'test:fingerprint',
     };
 
-    const result = FindingCreateSchema.safeParse(invalidFinding);
+    const result = CreateFindingSchema.safeParse(invalidFinding);
     expect(result.success).toBe(false);
   });
 
@@ -42,7 +48,7 @@ describe('Finding Schema', () => {
       severity: 'high',
     };
 
-    const result = FindingCreateSchema.safeParse(invalidFinding);
+    const result = CreateFindingSchema.safeParse(invalidFinding);
     expect(result.success).toBe(false);
   });
 
@@ -50,33 +56,35 @@ describe('Finding Schema', () => {
     const findingWithEvidence = {
       targetRef: '507f1f77bcf86cd799439011',
       targetFqdn: 'example.com',
-      provider: 'webdiscovery',
+      provider: 'dirsearch',
+      category: 'WEB',
       severity: 'medium',
       title: 'Sensitive File Exposed',
       description: 'Found .env file in web root',
-      fingerprint: 'webdiscovery:example.com:file:.env',
-      evidenceRef: '507f1f77bcf86cd799439012',
+      fingerprint: 'dirsearch:example.com:file:.env',
+      evidenceFileId: '507f1f77bcf86cd799439012',
     };
 
-    const result = FindingCreateSchema.safeParse(findingWithEvidence);
+    const result = CreateFindingSchema.safeParse(findingWithEvidence);
     expect(result.success).toBe(true);
   });
 
   it('should accept all valid severity levels', () => {
     const severities = ['critical', 'high', 'medium', 'low', 'info'];
-    
+
     severities.forEach((severity) => {
       const finding = {
         targetRef: '507f1f77bcf86cd799439011',
         targetFqdn: 'example.com',
-        provider: 'test',
+        provider: 'dns',
+        category: 'DNS',
         severity,
         title: 'Test Finding',
         description: 'Test description',
         fingerprint: `test:${severity}`,
       };
 
-      const result = FindingCreateSchema.safeParse(finding);
+      const result = CreateFindingSchema.safeParse(finding);
       expect(result.success).toBe(true);
     });
   });

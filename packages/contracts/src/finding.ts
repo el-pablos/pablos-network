@@ -48,3 +48,6 @@ export const FindingQuerySchema = z.object({
 
 export type FindingQuery = z.infer<typeof FindingQuerySchema>;
 
+// Backward compatibility aliases
+export const FindingCreateSchema = CreateFindingSchema;
+

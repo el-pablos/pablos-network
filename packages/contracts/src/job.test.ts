@@ -1,35 +1,35 @@
 import { describe, it, expect } from 'vitest';
-import { JobCreateSchema, JobUpdateSchema } from './job';
+import { JobCreateSchema, JobUpdateSchema, CreateJobSchema, UpdateJobSchema } from './job';
 
 describe('Job Schema', () => {
   it('should validate a valid job creation', () => {
     const validJob = {
+      type: 'dns',
       targetRef: '507f1f77bcf86cd799439011',
       targetFqdn: 'example.com',
-      provider: 'dns',
-      status: 'queued',
-      config: {
+      metadata: {
         mode: 'safe',
         timeout: 300,
       },
     };
 
-    const result = JobCreateSchema.safeParse(validJob);
+    const result = CreateJobSchema.safeParse(validJob);
     expect(result.success).toBe(true);
+
+    // Test backward compatibility alias
+    const result2 = JobCreateSchema.safeParse(validJob);
+    expect(result2.success).toBe(true);
   });
 
   it('should validate all job statuses', () => {
-    const statuses = ['queued', 'running', 'done', 'failed'];
-    
+    const statuses = ['pending', 'running', 'done', 'failed', 'cancelled'];
+
     statuses.forEach((status) => {
-      const job = {
-        targetRef: '507f1f77bcf86cd799439011',
-        targetFqdn: 'example.com',
-        provider: 'dns',
+      const update = {
         status,
       };
 
-      const result = JobCreateSchema.safeParse(job);
+      const result = UpdateJobSchema.safeParse(update);
       expect(result.success).toBe(true);
     });
   });
@@ -38,11 +38,15 @@ describe('Job Schema', () => {
     const update = {
       status: 'running',
       progress: 50,
-      logs: ['Started scan', 'Processing...'],
+      message: 'Processing...',
     };
 
-    const result = JobUpdateSchema.safeParse(update);
+    const result = UpdateJobSchema.safeParse(update);
     expect(result.success).toBe(true);
+
+    // Test backward compatibility alias
+    const result2 = JobUpdateSchema.safeParse(update);
+    expect(result2.success).toBe(true);
   });
 
   it('should reject invalid progress value', () => {
@@ -51,20 +55,17 @@ describe('Job Schema', () => {
       progress: 150, // Invalid: > 100
     };
 
-    const result = JobUpdateSchema.safeParse(update);
+    const result = UpdateJobSchema.safeParse(update);
     expect(result.success).toBe(false);
   });
 
   it('should accept job with error message', () => {
-    const job = {
-      targetRef: '507f1f77bcf86cd799439011',
-      targetFqdn: 'example.com',
-      provider: 'dast',
+    const update = {
       status: 'failed',
       error: 'Connection timeout',
     };
 
-    const result = JobCreateSchema.safeParse(job);
+    const result = UpdateJobSchema.safeParse(update);
     expect(result.success).toBe(true);
   });
 });
