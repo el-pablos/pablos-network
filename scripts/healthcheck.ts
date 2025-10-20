@@ -10,7 +10,7 @@
  * - OWASP ZAP availability
  */
 
-import { connect } from 'mongoose';
+import { connect, disconnect } from 'mongoose';
 import IORedis from 'ioredis';
 import { execSync } from 'child_process';
 import * as fs from 'fs';
@@ -65,8 +65,7 @@ async function checkMongoDB(): Promise<void> {
     });
 
     // Disconnect
-    const mongoose = await import('mongoose');
-    await mongoose.disconnect();
+    await disconnect();
   } catch (error: any) {
     // MongoDB connection failures are often due to IP whitelist issues
     // Mark as warning instead of error for development
@@ -159,7 +158,7 @@ function checkDirsearch(): void {
 
   try {
     execSync(`${dirsearchBin} --version`, { stdio: 'ignore' });
-    
+
     addResult({
       name: 'dirsearch',
       status: 'ok',
@@ -171,6 +170,28 @@ function checkDirsearch(): void {
       name: 'dirsearch',
       status: 'warning',
       message: 'Not found. Install with: pip install dirsearch OR set DIRSEARCH_BIN env var',
+      required: false,
+    });
+  }
+}
+
+function checkCfHero(): void {
+  const cfHeroBin = process.env.CF_HERO_BIN || 'cf-hero';
+
+  try {
+    execSync(`${cfHeroBin} -h`, { stdio: 'ignore' });
+
+    addResult({
+      name: 'cf-hero',
+      status: 'ok',
+      message: `Found at: ${cfHeroBin}`,
+      required: false,
+    });
+  } catch (error) {
+    addResult({
+      name: 'cf-hero',
+      status: 'warning',
+      message: 'Not found. Build with: cd tools/cf-hero && go build OR set CF_HERO_BIN env var',
       required: false,
     });
   }
@@ -295,6 +316,7 @@ async function main() {
   checkGeminiAPI();
   checkPythonVenv();
   checkDirsearch();
+  checkCfHero();
   checkZAP();
 
   console.log('');
