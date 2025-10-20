@@ -1,12 +1,16 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { Readable } from 'stream';
+import { Readable, Writable } from 'stream';
 import { ObjectId } from 'mongodb';
+import { EventEmitter } from 'events';
 
 // Mock MongoDB
-const mockUploadStream = {
-  id: new ObjectId('507f1f77bcf86cd799439011'),
-  on: vi.fn(),
-};
+class MockUploadStream extends EventEmitter {
+  id = new ObjectId('507f1f77bcf86cd799439011');
+  write = vi.fn();
+  end = vi.fn();
+}
+
+const mockUploadStream = new MockUploadStream();
 
 const mockDownloadStream = new Readable({
   read() {
@@ -58,13 +62,10 @@ vi.mock('./logger', () => ({
 describe('GridFS', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Reset upload stream event handlers
-    mockUploadStream.on.mockImplementation((event: string, handler: any) => {
-      if (event === 'finish') {
-        // Simulate immediate finish
-        setTimeout(() => handler(), 0);
-      }
-      return mockUploadStream;
+    // Reset upload stream
+    mockUploadStream.removeAllListeners();
+    mockUploadStream.on('finish', () => {
+      // Auto-emit finish for successful uploads
     });
   });
 
@@ -89,15 +90,99 @@ describe('GridFS', () => {
 
       expect(bucket1).toBe(bucket2);
     });
+
+    it('should throw error when MONGODB_URI is not configured', async () => {
+      // Clear module cache to test initialization without client
+      vi.resetModules();
+
+      // Remove MONGODB_URI from env
+      const originalUri = process.env.MONGODB_URI;
+      delete process.env.MONGODB_URI;
+
+      const { initGridFS } = await import('./gridfs');
+
+      await expect(initGridFS()).rejects.toThrow('MONGODB_URI not configured');
+
+      // Restore env
+      if (originalUri) {
+        process.env.MONGODB_URI = originalUri;
+      }
+    });
   });
 
   describe('saveEvidence', () => {
-    it('should initialize GridFS before saving', async () => {
-      const { initGridFS } = await import('./gridfs');
+    it('should save evidence from Buffer', async () => {
+      const { saveEvidence } = await import('./gridfs');
+      const buffer = Buffer.from('test data');
+      const metadata = {
+        filename: 'test.txt',
+        contentType: 'text/plain',
+        size: buffer.length,
+      };
 
-      // Just verify initGridFS is called
-      const bucket = await initGridFS();
-      expect(bucket).toBeDefined();
+      // Emit finish event after a short delay
+      setTimeout(() => mockUploadStream.emit('finish'), 10);
+
+      const fileId = await saveEvidence(buffer, metadata);
+
+      expect(fileId).toBeDefined();
+      expect(mockBucket.openUploadStream).toHaveBeenCalledWith('test.txt', expect.any(Object));
+    });
+
+    it('should save evidence from string', async () => {
+      const { saveEvidence } = await import('./gridfs');
+      const data = 'test data string';
+      const metadata = {
+        filename: 'test.txt',
+        contentType: 'text/plain',
+        size: data.length,
+      };
+
+      // Emit finish event after a short delay
+      setTimeout(() => mockUploadStream.emit('finish'), 10);
+
+      const fileId = await saveEvidence(data, metadata);
+
+      expect(fileId).toBeDefined();
+      expect(mockBucket.openUploadStream).toHaveBeenCalledWith('test.txt', expect.any(Object));
+    });
+
+    it('should save evidence from Readable stream', async () => {
+      const { saveEvidence } = await import('./gridfs');
+      const stream = new Readable({
+        read() {
+          this.push('test data');
+          this.push(null);
+        },
+      });
+      const metadata = {
+        filename: 'test.txt',
+        contentType: 'text/plain',
+        size: 9,
+      };
+
+      // Emit finish event after a short delay
+      setTimeout(() => mockUploadStream.emit('finish'), 10);
+
+      const fileId = await saveEvidence(stream, metadata);
+
+      expect(fileId).toBeDefined();
+      expect(mockBucket.openUploadStream).toHaveBeenCalledWith('test.txt', expect.any(Object));
+    });
+
+    it('should handle upload errors', async () => {
+      const { saveEvidence } = await import('./gridfs');
+      const buffer = Buffer.from('test data');
+      const metadata = {
+        filename: 'test.txt',
+        contentType: 'text/plain',
+        size: buffer.length,
+      };
+
+      // Emit error event after a short delay
+      setTimeout(() => mockUploadStream.emit('error', new Error('Upload failed')), 10);
+
+      await expect(saveEvidence(buffer, metadata)).rejects.toThrow('Upload failed');
     });
   });
 
