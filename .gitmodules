@@ -1,0 +1,6 @@
+[submodule "tools/dirsearch"]
+	path = tools/dirsearch
+	url = https://github.com/maurosoria/dirsearch
+[submodule "tools/cf-hero"]
+	path = tools/cf-hero
+	url = https://github.com/musana/cf-hero

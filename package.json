@@ -4,6 +4,7 @@
   "private": true,
   "description": "OSINT + AppSec orchestrator with real-time WebTUI and AI integration",
   "scripts": {
+    "setup:tools": "node scripts/setup-tools.js",
     "healthcheck": "tsx scripts/healthcheck.ts",
     "dev": "concurrently -n webtui,gateway,ai,dns,osint,webdisc,dast -c white,cyan,magenta,green,yellow,blue,red \"pnpm dev:webtui\" \"pnpm dev:gateway\" \"pnpm dev:ai\" \"pnpm dev:worker:dns\" \"pnpm dev:worker:osint\" \"pnpm dev:worker:webdiscovery\" \"pnpm dev:worker:dast\"",
     "dev:webtui": "pnpm --filter @pablos/webtui dev",
@@ -13,6 +14,7 @@
     "dev:worker:osint": "pnpm --filter @pablos/worker-osint dev",
     "dev:worker:webdiscovery": "pnpm --filter @pablos/worker-webdiscovery dev",
     "dev:worker:dast": "pnpm --filter @pablos/worker-dast dev",
+    "dev:worker:origin": "pnpm --filter @pablos/worker-origin dev",
     "build": "turbo run build",
     "build:packages": "pnpm --filter @pablos/contracts build && pnpm --filter @pablos/utils build",
     "lint": "turbo run lint",
