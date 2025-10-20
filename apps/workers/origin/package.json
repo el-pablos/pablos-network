@@ -1,0 +1,25 @@
+{
+  "name": "@pablos/worker-origin",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CF-Hero origin IP discovery worker",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@pablos/contracts": "workspace:*",
+    "@pablos/utils": "workspace:*",
+    "bullmq": "^5.0.0",
+    "mongoose": "^8.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  }
+}
+

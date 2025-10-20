@@ -1,8 +1,8 @@
 import { Worker, Job } from 'bullmq';
 import { connect } from 'mongoose';
 import { spawn } from 'child_process';
-import { redis, createLogger, generateFingerprint, saveEvidence } from '@pablos/utils';
-import { Finding, Job as JobModel } from './models';
+import { redis, createLogger, generateFingerprint, saveEvidence, VerificationRequiredError } from '@pablos/utils';
+import { Finding, Job as JobModel, Asset } from './models';
 
 const logger = createLogger('worker-webdiscovery');
 
@@ -30,6 +30,19 @@ async function processDirsearchJob(job: Job<WebDiscoveryJobData>) {
   logger.info({ jobId: job.id, domain, mode }, 'Processing dirsearch job');
 
   try {
+    // CRITICAL: Verify domain ownership before active scanning
+    const asset = await Asset.findById(assetId);
+    if (!asset) {
+      throw new Error(`Asset not found: ${assetId}`);
+    }
+
+    if (!asset.verifiedAt) {
+      logger.warn({ domain, assetId }, 'Domain verification required for active scanning');
+      throw new VerificationRequiredError(domain);
+    }
+
+    logger.info({ domain, verifiedAt: asset.verifiedAt }, 'Domain verification confirmed');
+
     // Check dirsearch availability
     const dirsearchBin = checkDirsearchAvailability();
     if (!dirsearchBin) {
