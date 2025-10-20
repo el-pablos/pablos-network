@@ -18,6 +18,11 @@
     "lint": "turbo run lint",
     "clean": "turbo run clean && rm -rf node_modules",
     "type-check": "turbo run type-check",
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "test:e2e": "vitest run --config vitest.e2e.config.ts",
+    "test:coverage": "vitest run --coverage",
+    "test:ui": "vitest --ui",
     "test:api": "bash examples/basic-scan.sh"
   },
   "workspaces": [
@@ -30,7 +35,18 @@
     "typescript": "^5.3.3",
     "concurrently": "^8.2.2",
     "tsx": "^4.7.0",
-    "dotenv": "^16.3.1"
+    "dotenv": "^16.3.1",
+    "vitest": "^2.0.0",
+    "@vitest/ui": "^2.0.0",
+    "@vitest/coverage-v8": "^2.0.0",
+    "@testing-library/react": "^16.0.0",
+    "@testing-library/user-event": "^14.5.0",
+    "@testing-library/jest-dom": "^6.0.0",
+    "jsdom": "^25.0.0",
+    "supertest": "^7.0.0",
+    "@types/supertest": "^6.0.0",
+    "socket.io-client": "^4.7.0",
+    "mongodb-memory-server": "^10.0.0"
   },
   "engines": {
     "node": ">=20.0.0",
