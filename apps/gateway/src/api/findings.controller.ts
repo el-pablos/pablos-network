@@ -73,7 +73,7 @@ export class FindingsController {
       }
     }
 
-    const stats = await this.findingModel.aggregate([
+    const stats = await this.findingModel.aggregate<{ _id: string; count: number }>([
       { $match: filter },
       {
         $group: {
@@ -83,7 +83,7 @@ export class FindingsController {
       },
     ]);
 
-    const result = {
+    const result: Record<string, number> = {
       critical: 0,
       high: 0,
       medium: 0,
@@ -92,7 +92,9 @@ export class FindingsController {
     };
 
     stats.forEach((stat) => {
-      result[stat._id] = stat.count;
+      if (stat._id in result) {
+        result[stat._id] = stat.count;
+      }
     });
 
     return result;

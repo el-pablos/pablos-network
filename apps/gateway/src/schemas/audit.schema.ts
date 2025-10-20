@@ -3,37 +3,37 @@ import { Document, Types } from 'mongoose';
 
 @Schema({ timestamps: false, collection: 'audit_logs' })
 export class AuditLog extends Document {
-  @Prop()
+  @Prop({ type: String })
   userId?: string;
 
-  @Prop({ required: true, index: true })
-  action: string;
+  @Prop({ required: true, type: String, index: true })
+  action!: string;
 
-  @Prop()
+  @Prop({ type: String })
   target?: string;
 
   @Prop({ type: Types.ObjectId })
   targetRef?: Types.ObjectId;
 
-  @Prop()
+  @Prop({ type: String })
   jobId?: string;
 
   @Prop({ type: Object })
   metadata?: Record<string, any>;
 
-  @Prop()
+  @Prop({ type: String })
   ipAddress?: string;
 
-  @Prop()
+  @Prop({ type: String })
   userAgent?: string;
 
-  @Prop({ required: true, index: true })
-  timestamp: Date;
+  @Prop({ required: true, type: Date, index: true })
+  timestamp!: Date;
 
-  @Prop({ default: true })
-  success: boolean;
+  @Prop({ type: Boolean, default: true })
+  success!: boolean;
 
-  @Prop()
+  @Prop({ type: String })
   error?: string;
 }
 

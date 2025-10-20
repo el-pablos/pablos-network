@@ -4,34 +4,34 @@ import type { JobStatus, Provider } from '@pablos/contracts';
 
 @Schema({ timestamps: true, collection: 'jobs' })
 export class Job extends Document {
-  @Prop({ required: true })
-  jobId: string;
+  @Prop({ required: true, type: String })
+  jobId!: string;
 
-  @Prop({ required: true, enum: ['zoomEye', 'binaryEdge', 'dirsearch', 'zap', 'dns', 'reverseip', 'domainwatch', 'policy', 'seo', 'media'] })
-  type: Provider;
+  @Prop({ required: true, type: String, enum: ['zoomEye', 'binaryEdge', 'dirsearch', 'zap', 'dns', 'reverseip', 'domainwatch', 'policy', 'seo', 'media'] })
+  type!: Provider;
 
   @Prop({ required: true, type: Types.ObjectId, ref: 'Asset' })
-  targetRef: Types.ObjectId;
+  targetRef!: Types.ObjectId;
 
-  @Prop()
+  @Prop({ type: String })
   targetFqdn?: string;
 
-  @Prop({ required: true, enum: ['pending', 'running', 'done', 'failed', 'cancelled'], default: 'pending', index: true })
-  status: JobStatus;
+  @Prop({ required: true, type: String, enum: ['pending', 'running', 'done', 'failed', 'cancelled'], default: 'pending', index: true })
+  status!: JobStatus;
 
-  @Prop({ default: 0, min: 0, max: 100 })
-  progress: number;
+  @Prop({ type: Number, default: 0, min: 0, max: 100 })
+  progress!: number;
 
-  @Prop()
+  @Prop({ type: String })
   message?: string;
 
-  @Prop()
+  @Prop({ type: String })
   error?: string;
 
-  @Prop()
+  @Prop({ type: Date })
   startedAt?: Date;
 
-  @Prop()
+  @Prop({ type: Date })
   finishedAt?: Date;
 
   @Prop({ type: Object })

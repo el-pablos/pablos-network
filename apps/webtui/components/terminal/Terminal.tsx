@@ -27,7 +27,7 @@ export function Terminal() {
         background: '#0a0e14',
         foreground: '#b3b1ad',
         cursor: '#ffcc66',
-        selection: '#253340',
+        selectionBackground: '#253340',
         black: '#01060e',
         red: '#ea6c73',
         green: '#91b362',

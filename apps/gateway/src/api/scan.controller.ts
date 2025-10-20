@@ -40,7 +40,7 @@ export class ScanController {
   @ApiOperation({ summary: 'Run passive OSINT scan' })
   async scanPassive(@Body() body: { domain: string }) {
     const asset = await this.assetModel.findOne({ fqdn: body.domain });
-    if (!asset) {
+    if (!asset || !asset._id) {
       throw new HttpException('Asset not found', HttpStatus.NOT_FOUND);
     }
 
@@ -88,6 +88,10 @@ export class ScanController {
 
     const asset = await this.requireVerification(body.domain, 'dirsearch');
 
+    if (!asset._id) {
+      throw new HttpException('Invalid asset', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
     const jobs = [];
 
     if (include.includes('dirsearch')) {
@@ -130,8 +134,12 @@ export class ScanController {
   @ApiOperation({ summary: 'Run DAST scan (OWASP ZAP)' })
   async scanDast(@Body() body: { domain: string; mode?: string }) {
     const mode = body.mode || 'safe';
-    
+
     const asset = await this.requireVerification(body.domain, 'zap');
+
+    if (!asset._id) {
+      throw new HttpException('Invalid asset', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
 
     const jobId = uuidv4();
     const job = new this.jobModel({

@@ -87,9 +87,9 @@ export function FindingsPanel() {
             <p className="text-sm mt-2">Run scans to discover findings</p>
           </div>
         ) : (
-          filteredFindings.map((finding) => (
+          filteredFindings.map((finding, index) => (
             <div
-              key={finding.id}
+              key={finding._id || `finding-${index}`}
               className={`rounded-lg p-3 border ${getSeverityColor(finding.severity)}`}
             >
               <div className="flex items-start justify-between mb-2">

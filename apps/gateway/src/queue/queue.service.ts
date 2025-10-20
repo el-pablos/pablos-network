@@ -97,16 +97,19 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
   async getJobStatus(provider: Provider, jobId: string): Promise<any> {
     const queue = this.getQueue(provider);
     const job = await queue.getJob(jobId);
-    
+
     if (!job) {
       return null;
     }
+
+    // In BullMQ v5, progress is a property, not a method
+    const progress = typeof job.progress === 'function' ? await job.progress() : job.progress;
 
     return {
       id: job.id,
       name: job.name,
       data: job.data,
-      progress: await job.progress(),
+      progress: progress || 0,
       state: await job.getState(),
       attemptsMade: job.attemptsMade,
       failedReason: job.failedReason,

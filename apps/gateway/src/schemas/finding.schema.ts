@@ -5,34 +5,34 @@ import type { Provider, Category, Severity } from '@pablos/contracts';
 @Schema({ timestamps: true, collection: 'findings' })
 export class Finding extends Document {
   @Prop({ required: true, type: Types.ObjectId, ref: 'Asset', index: true })
-  targetRef: Types.ObjectId;
+  targetRef!: Types.ObjectId;
 
-  @Prop()
+  @Prop({ type: String })
   targetFqdn?: string;
 
-  @Prop({ required: true, enum: ['zoomEye', 'binaryEdge', 'dirsearch', 'zap', 'dns', 'reverseip', 'domainwatch', 'policy', 'seo', 'media'] })
-  provider: Provider;
+  @Prop({ required: true, type: String, enum: ['zoomEye', 'binaryEdge', 'dirsearch', 'zap', 'dns', 'reverseip', 'domainwatch', 'policy', 'seo', 'media'] })
+  provider!: Provider;
 
-  @Prop({ required: true, enum: ['DNS', 'WEB', 'NET', 'OSINT', 'POLICY', 'SEO', 'MEDIA'], index: true })
-  category: Category;
+  @Prop({ required: true, type: String, enum: ['DNS', 'WEB', 'NET', 'OSINT', 'POLICY', 'SEO', 'MEDIA'], index: true })
+  category!: Category;
 
-  @Prop({ required: true })
-  title: string;
+  @Prop({ required: true, type: String })
+  title!: string;
 
-  @Prop()
+  @Prop({ type: String })
   description?: string;
 
-  @Prop({ required: true, enum: ['info', 'low', 'medium', 'high', 'critical'], index: true })
-  severity: Severity;
+  @Prop({ required: true, type: String, enum: ['info', 'low', 'medium', 'high', 'critical'], index: true })
+  severity!: Severity;
 
-  @Prop({ min: 0, max: 10 })
+  @Prop({ type: Number, min: 0, max: 10 })
   cvss?: number;
 
   @Prop({ type: Types.ObjectId })
   evidenceFileId?: Types.ObjectId;
 
-  @Prop({ required: true })
-  fingerprint: string;
+  @Prop({ required: true, type: String })
+  fingerprint!: string;
 
   @Prop({ type: Object })
   metadata?: Record<string, any>;

@@ -4,28 +4,28 @@ import type { AssetType } from '@pablos/contracts';
 
 @Schema({ timestamps: true, collection: 'assets' })
 export class Asset extends Document {
-  @Prop({ required: true, enum: ['domain', 'subdomain', 'ip'] })
-  type: AssetType;
+  @Prop({ required: true, type: String, enum: ['domain', 'subdomain', 'ip'] })
+  type!: AssetType;
 
-  @Prop({ index: true })
+  @Prop({ type: String, index: true })
   fqdn?: string;
 
-  @Prop({ index: true })
+  @Prop({ type: String, index: true })
   parentFqdn?: string;
 
-  @Prop({ default: true, index: true })
-  active: boolean;
+  @Prop({ type: Boolean, default: true, index: true })
+  active!: boolean;
 
   @Prop({ type: [String], default: [] })
-  ip: string[];
+  ip!: string[];
 
-  @Prop()
+  @Prop({ type: String })
   owner?: string;
 
-  @Prop()
+  @Prop({ type: Date })
   verifiedAt?: Date;
 
-  @Prop()
+  @Prop({ type: String })
   consentToken?: string;
 
   @Prop({ type: Object })

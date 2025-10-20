@@ -2,28 +2,28 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
 class MetricEntity {
-  @Prop({ required: true, enum: ['job', 'asset', 'system'] })
-  kind: 'job' | 'asset' | 'system';
+  @Prop({ required: true, type: String, enum: ['job', 'asset', 'system'] })
+  kind!: 'job' | 'asset' | 'system';
 
-  @Prop({ required: true })
-  id: string;
+  @Prop({ required: true, type: String })
+  id!: string;
 }
 
 @Schema({ timestamps: false, collection: 'metrics' })
 export class Metric extends Document {
-  @Prop({ required: true, index: true })
-  ts: Date;
+  @Prop({ required: true, type: Date, index: true })
+  ts!: Date;
 
   @Prop({ required: true, type: MetricEntity })
-  entity: MetricEntity;
+  entity!: MetricEntity;
 
-  @Prop({ required: true, index: true })
-  name: string;
+  @Prop({ required: true, type: String, index: true })
+  name!: string;
 
-  @Prop({ required: true })
-  value: number;
+  @Prop({ required: true, type: Number })
+  value!: number;
 
-  @Prop()
+  @Prop({ type: String })
   unit?: string;
 
   @Prop({ type: Object })

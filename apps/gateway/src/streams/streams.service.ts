@@ -1,8 +1,11 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/mongoose';
-import { Connection, ChangeStream } from 'mongoose';
+import { Connection } from 'mongoose';
 import { createLogger } from '@pablos/utils';
 import { EventEmitter } from 'events';
+
+// Type for MongoDB Change Stream
+type ChangeStream = any;
 
 const logger = createLogger('streams');
 
@@ -38,7 +41,7 @@ export class StreamsService extends EventEmitter implements OnModuleInit, OnModu
         this.emit('job:change', change);
       });
 
-      this.jobsStream.on('error', (error) => {
+      this.jobsStream.on('error', (error: Error) => {
         logger.error({ error }, 'Jobs stream error');
       });
 
@@ -52,7 +55,7 @@ export class StreamsService extends EventEmitter implements OnModuleInit, OnModu
         this.emit('finding:change', change);
       });
 
-      this.findingsStream.on('error', (error) => {
+      this.findingsStream.on('error', (error: Error) => {
         logger.error({ error }, 'Findings stream error');
       });
 
