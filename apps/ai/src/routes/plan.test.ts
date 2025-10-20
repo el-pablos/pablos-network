@@ -63,7 +63,8 @@ describe('Plan Route', () => {
       method: 'POST',
       url: '/plan',
       payload: {
-        command: ':scan full example.com',
+        command: ':scan full',
+        target: 'example.com',
         mode: 'safe',
       },
     });
@@ -92,7 +93,8 @@ describe('Plan Route', () => {
       method: 'POST',
       url: '/plan',
       payload: {
-        command: ':scan passive example.com',
+        command: ':scan passive',
+        target: 'example.com',
         mode: 'normal',
       },
     });
@@ -110,7 +112,8 @@ describe('Plan Route', () => {
         method: 'POST',
         url: '/plan',
         payload: {
-          command: `:scan full example.com`,
+          command: ':scan full',
+          target: 'example.com',
           mode,
         },
       });
@@ -124,19 +127,20 @@ describe('Plan Route', () => {
       method: 'POST',
       url: '/plan',
       payload: {
-        command: ':scan full example.com',
+        command: ':scan full',
+        target: 'example.com',
         mode: 'safe',
       },
     });
 
     expect(response.statusCode).toBe(200);
     const data = JSON.parse(response.body);
-    
+
     // Validate schema structure
     expect(data).toHaveProperty('steps');
     expect(data).toHaveProperty('totalEstimatedDuration');
     expect(data).toHaveProperty('constraints');
-    
+
     // Validate steps structure
     data.steps.forEach((step: any) => {
       expect(step).toHaveProperty('id');

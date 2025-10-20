@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { PlanRequestSchema, PlanSchema } from '@pablos/contracts';
 import { generateJSONWithGemini } from '../gemini';
 import { createLogger } from '@pablos/utils';
+import { ZodError } from 'zod';
 
 const logger = createLogger('ai-plan');
 
@@ -57,6 +58,13 @@ Generate the scan plan:`;
 
       return validated;
     } catch (error) {
+      if (error instanceof ZodError) {
+        logger.warn({ error: error.errors }, 'Validation failed');
+        return reply.status(400).send({
+          error: 'Validation failed',
+          details: error.errors
+        });
+      }
       logger.error({ error }, 'Plan generation failed');
       reply.status(500).send({ error: 'Failed to generate plan' });
     }

@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { z } from 'zod';
+import { z, ZodError } from 'zod';
 import { generateJSONWithGemini } from '../gemini';
 import { createLogger } from '@pablos/utils';
 
@@ -52,6 +52,13 @@ Calculate risk score:`;
 
       return score;
     } catch (error) {
+      if (error instanceof ZodError) {
+        logger.warn({ error: error.errors }, 'Validation failed');
+        return reply.status(400).send({
+          error: 'Validation failed',
+          details: error.errors
+        });
+      }
       logger.error({ error }, 'Scoring failed');
       reply.status(500).send({ error: 'Failed to score finding' });
     }
