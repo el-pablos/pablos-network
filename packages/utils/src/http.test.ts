@@ -17,7 +17,9 @@ describe('HttpClient', () => {
 
     it('should create client with default headers', () => {
       const client = new HttpClient('http://localhost:4000', {
-        'X-Custom-Header': 'value',
+        headers: {
+          'X-Custom-Header': 'value',
+        },
       });
       expect(client).toBeInstanceOf(HttpClient);
     });
