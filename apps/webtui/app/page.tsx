@@ -1,11 +1,17 @@
 'use client';
 
-import { Terminal } from '@/components/terminal/Terminal';
+import dynamic from 'next/dynamic';
 import { JobsPanel } from '@/components/panels/JobsPanel';
 import { FindingsPanel } from '@/components/panels/FindingsPanel';
 import { CommandPalette } from '@/components/CommandPalette';
 import { useCommandPalette } from '@/hooks/useCommandPalette';
 import { useEffect } from 'react';
+
+// Dynamically import Terminal component with SSR disabled
+const Terminal = dynamic(() => import('@/components/terminal/Terminal').then(mod => ({ default: mod.Terminal })), {
+  ssr: false,
+  loading: () => <div className="h-full w-full bg-terminal-bg p-4 flex items-center justify-center text-gray-400">Loading terminal...</div>
+});
 
 export default function Home() {
   const { isOpen, open, close } = useCommandPalette();

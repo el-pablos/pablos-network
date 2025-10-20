@@ -111,7 +111,6 @@ describe('ScanController', () => {
 
       const result = await controller.scanPassive({
         domain: 'example.com',
-        providers: ['zoomEye', 'binaryEdge'],
       });
 
       expect(result.jobs).toHaveLength(2);
@@ -132,7 +131,6 @@ describe('ScanController', () => {
       await expect(
         controller.scanPassive({
           domain: 'nonexistent.com',
-          providers: ['zoomEye'],
         })
       ).rejects.toThrow(HttpException);
     });
