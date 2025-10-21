@@ -150,5 +150,25 @@ describe('Plan Route', () => {
       expect(step).toHaveProperty('priority');
     });
   });
+
+  it('should handle Gemini API errors', async () => {
+    const { generateJSONWithGemini } = await import('../gemini');
+    vi.mocked(generateJSONWithGemini).mockRejectedValueOnce(new Error('API Error'));
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/plan',
+      payload: {
+        command: ':scan full',
+        target: 'example.com',
+        mode: 'safe',
+      },
+    });
+
+    expect(response.statusCode).toBe(500);
+    const data = JSON.parse(response.body);
+    expect(data).toHaveProperty('error');
+    expect(data.error).toBe('Failed to generate plan');
+  });
 });
 

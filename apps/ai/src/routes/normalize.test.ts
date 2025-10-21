@@ -64,7 +64,7 @@ describe('Normalize Route', () => {
         paths: ['/admin', '/login', '/api'],
         status: 200,
       },
-      targetRef: 'example.com',
+      targetRef: '507f1f77bcf86cd799439011', // Valid MongoDB ObjectId
       targetFqdn: 'www.example.com',
     };
 
@@ -103,7 +103,7 @@ describe('Normalize Route', () => {
           title: 'Admin Panel Exposed',
           severity: 'high',
           category: 'WEB',
-          targetRef: 'example.com',
+          targetRef: '507f1f77bcf86cd799439011',
           targetFqdn: 'www.example.com',
           provider: 'dirsearch',
         }),
@@ -111,7 +111,7 @@ describe('Normalize Route', () => {
           title: 'Login Page Found',
           severity: 'info',
           category: 'WEB',
-          targetRef: 'example.com',
+          targetRef: '507f1f77bcf86cd799439011',
           targetFqdn: 'www.example.com',
           provider: 'dirsearch',
         }),
@@ -121,9 +121,9 @@ describe('Normalize Route', () => {
 
   it('should normalize findings without targetFqdn', async () => {
     const requestBody = {
-      provider: 'cf-hero',
+      provider: 'reverseip', // Valid provider enum
       rawData: { origins: ['1.1.1.1', '8.8.8.8'] },
-      targetRef: 'example.com',
+      targetRef: '507f1f77bcf86cd799439011', // Valid MongoDB ObjectId
     };
 
     const mockFindings = [
@@ -146,8 +146,8 @@ describe('Normalize Route', () => {
       findings: expect.arrayContaining([
         expect.objectContaining({
           title: 'Cloudflare Origin IP Detected',
-          targetRef: 'example.com',
-          provider: 'cf-hero',
+          targetRef: '507f1f77bcf86cd799439011',
+          provider: 'reverseip',
         }),
       ]),
     });
@@ -275,7 +275,7 @@ describe('Normalize Route', () => {
     const requestBody = {
       provider: 'test-provider',
       rawData: { noFindings: true },
-      targetRef: 'clean.com',
+      targetRef: '507f1f77bcf86cd799439011', // Valid MongoDB ObjectId
     };
 
     mockGenerateJSONWithGemini.mockResolvedValue([]);
@@ -288,9 +288,9 @@ describe('Normalize Route', () => {
 
   it('should validate all finding fields with CreateFindingSchema', async () => {
     const requestBody = {
-      provider: 'comprehensive-scanner',
+      provider: 'zap', // Valid provider enum
       rawData: { scan: 'complete' },
-      targetRef: 'test.com',
+      targetRef: '507f1f77bcf86cd799439011', // Valid MongoDB ObjectId
       targetFqdn: 'www.test.com',
     };
 
@@ -320,9 +320,9 @@ describe('Normalize Route', () => {
       severity: 'critical',
       category: 'WEB',
       fingerprint: 'complete-finding-hash',
-      targetRef: 'test.com',
+      targetRef: '507f1f77bcf86cd799439011',
       targetFqdn: 'www.test.com',
-      provider: 'comprehensive-scanner',
+      provider: 'zap',
       metadata: expect.objectContaining({
         cve: 'CVE-2024-1234',
         cvss: 9.8,

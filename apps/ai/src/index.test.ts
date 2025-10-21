@@ -27,22 +27,15 @@ vi.mock('@google/generative-ai', () => ({
   })),
 }));
 
-// Create mock Fastify instance
-const mockRegister = vi.fn();
-const mockGet = vi.fn();
-const mockListen = vi.fn();
-
-const mockFastifyInstance = {
-  register: mockRegister,
-  get: mockGet,
-  listen: mockListen,
-};
-
-// Mock Fastify constructor
-const mockFastify = vi.fn(() => mockFastifyInstance);
-
+// Mock Fastify - use factory function to avoid hoisting issues
 vi.mock('fastify', () => ({
-  default: mockFastify,
+  default: vi.fn(() => ({
+    register: vi.fn(),
+    get: vi.fn(),
+    listen: vi.fn((opts: any, callback: any) => {
+      callback(null, `http://0.0.0.0:${opts.port}`);
+    }),
+  })),
 }));
 
 // Mock route modules to prevent actual imports
@@ -63,35 +56,43 @@ vi.mock('./routes/report', () => ({
 }));
 
 describe('AI Service Index', () => {
-  beforeAll(() => {
-    // Set default listen behavior
-    mockListen.mockImplementation((opts: any, callback: any) => {
-      callback(null, `http://0.0.0.0:${opts.port}`);
-    });
+  let mockFastify: any;
+  let mockFastifyInstance: any;
+
+  beforeAll(async () => {
+    // Import the module to trigger initialization
+    await import('./index');
+
+    // Get reference to the mocked Fastify constructor
+    const FastifyModule = await import('fastify');
+    mockFastify = vi.mocked(FastifyModule.default);
+
+    // Get the instance that was created
+    mockFastifyInstance = mockFastify.mock.results[0]?.value;
   });
 
-  it('should initialize Fastify server with correct options', async () => {
+  it('should initialize Fastify server with correct options', () => {
     expect(mockFastify).toHaveBeenCalledWith({ logger: false });
   });
 
-  it('should register all four routes', async () => {
-    expect(mockRegister).toHaveBeenCalledTimes(4);
+  it('should register all four routes', () => {
+    expect(mockFastifyInstance.register).toHaveBeenCalledTimes(4);
   });
 
-  it('should register health check endpoint', async () => {
-    expect(mockGet).toHaveBeenCalledWith('/health', expect.any(Function));
+  it('should register health check endpoint', () => {
+    expect(mockFastifyInstance.get).toHaveBeenCalledWith('/health', expect.any(Function));
   });
 
-  it('should start server on correct port and host', async () => {
-    expect(mockListen).toHaveBeenCalledWith(
+  it('should start server on correct port and host', () => {
+    expect(mockFastifyInstance.listen).toHaveBeenCalledWith(
       { port: 4001, host: '0.0.0.0' },
       expect.any(Function)
     );
   });
 
   it('should return correct health status', async () => {
-    const healthHandler = mockGet.mock.calls.find(
-      (call) => call[0] === '/health'
+    const healthHandler = mockFastifyInstance.get.mock.calls.find(
+      (call: any) => call[0] === '/health'
     )?.[1];
 
     expect(healthHandler).toBeDefined();
@@ -103,29 +104,21 @@ describe('AI Service Index', () => {
   });
 
   it('should handle server startup errors and exit with code 1', async () => {
-    // Reset modules to test error path
-    vi.resetModules();
-
     const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
 
-    // Create new mock with error behavior
-    const errorMockListen = vi.fn((opts: any, callback: any) => {
-      callback(new Error('Port already in use'), null);
-    });
-
-    const errorMockFastifyInstance = {
-      register: vi.fn(),
-      get: vi.fn(),
-      listen: errorMockListen,
-    };
-
-    const errorMockFastify = vi.fn(() => errorMockFastifyInstance);
-
+    // Mock Fastify with error behavior
     vi.doMock('fastify', () => ({
-      default: errorMockFastify,
+      default: vi.fn(() => ({
+        register: vi.fn(),
+        get: vi.fn(),
+        listen: vi.fn((opts: any, callback: any) => {
+          callback(new Error('Port already in use'), null);
+        }),
+      })),
     }));
 
-    // Re-import to trigger error path
+    // Reset and re-import to trigger error path
+    vi.resetModules();
     await import('./index');
 
     expect(mockExit).toHaveBeenCalledWith(1);
