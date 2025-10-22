@@ -26,6 +26,20 @@ describe('Gateway Schemas', () => {
 
       const indexes = AssetSchema.indexes();
       expect(indexes.length).toBeGreaterThan(0);
+
+      // Check for fqdn unique index
+      const fqdnIndex = indexes.find((idx: any) => {
+        const keys = Object.keys(idx[0]);
+        return keys.length === 1 && idx[0].fqdn === 1 && idx[1]?.unique === true;
+      });
+      expect(fqdnIndex).toBeDefined();
+
+      // Check for compound indexes
+      const parentActiveIndex = indexes.find((idx: any) => idx[0].parentFqdn === 1 && idx[0].active === 1);
+      expect(parentActiveIndex).toBeDefined();
+
+      const typeActiveIndex = indexes.find((idx: any) => idx[0].type === 1 && idx[0].active === 1);
+      expect(typeActiveIndex).toBeDefined();
     });
   });
 
@@ -38,15 +52,42 @@ describe('Gateway Schemas', () => {
       expect(Finding.name).toBe('Finding');
 
       // Test schema paths
-      expect(FindingSchema.path('targetRef')).toBeDefined();
+      const targetRefPath = FindingSchema.path('targetRef');
+      expect(targetRefPath).toBeDefined();
+      expect(targetRefPath.isRequired).toBe(true);
+
       expect(FindingSchema.path('targetFqdn')).toBeDefined();
-      expect(FindingSchema.path('provider')).toBeDefined();
-      expect(FindingSchema.path('category')).toBeDefined();
-      expect(FindingSchema.path('title')).toBeDefined();
+
+      const providerPath = FindingSchema.path('provider');
+      expect(providerPath).toBeDefined();
+      expect(providerPath.isRequired).toBe(true);
+
+      const categoryPath = FindingSchema.path('category');
+      expect(categoryPath).toBeDefined();
+      expect(categoryPath.isRequired).toBe(true);
+
+      const titlePath = FindingSchema.path('title');
+      expect(titlePath).toBeDefined();
+      expect(titlePath.isRequired).toBe(true);
+
       expect(FindingSchema.path('description')).toBeDefined();
-      expect(FindingSchema.path('severity')).toBeDefined();
-      expect(FindingSchema.path('fingerprint')).toBeDefined();
+
+      const severityPath = FindingSchema.path('severity');
+      expect(severityPath).toBeDefined();
+      expect(severityPath.isRequired).toBe(true);
+
+      expect(FindingSchema.path('cvss')).toBeDefined();
+      expect(FindingSchema.path('evidenceFileId')).toBeDefined();
+
+      const fingerprintPath = FindingSchema.path('fingerprint');
+      expect(fingerprintPath).toBeDefined();
+      expect(fingerprintPath.isRequired).toBe(true);
+
       expect(FindingSchema.path('metadata')).toBeDefined();
+
+      // Test timestamps
+      expect(FindingSchema.path('createdAt')).toBeDefined();
+      expect(FindingSchema.path('updatedAt')).toBeDefined();
     });
 
     it('should have correct indexes', async () => {
@@ -54,6 +95,15 @@ describe('Gateway Schemas', () => {
 
       const indexes = FindingSchema.indexes();
       expect(indexes.length).toBeGreaterThan(0);
+
+      // Check for compound unique index
+      const compoundIndex = indexes.find((idx: any) =>
+        idx[0].targetRef === 1 && idx[0].provider === 1 && idx[0].fingerprint === 1
+      );
+      expect(compoundIndex).toBeDefined();
+      if (compoundIndex) {
+        expect(compoundIndex[1].unique).toBe(true);
+      }
     });
   });
 
@@ -66,17 +116,38 @@ describe('Gateway Schemas', () => {
       expect(Job.name).toBe('Job');
 
       // Test schema paths
-      expect(JobSchema.path('jobId')).toBeDefined();
-      expect(JobSchema.path('targetRef')).toBeDefined();
+      const jobIdPath = JobSchema.path('jobId');
+      expect(jobIdPath).toBeDefined();
+      expect(jobIdPath.isRequired).toBe(true);
+
+      const targetRefPath = JobSchema.path('targetRef');
+      expect(targetRefPath).toBeDefined();
+      expect(targetRefPath.isRequired).toBe(true);
+
       expect(JobSchema.path('targetFqdn')).toBeDefined();
-      expect(JobSchema.path('type')).toBeDefined();
-      expect(JobSchema.path('status')).toBeDefined();
-      expect(JobSchema.path('progress')).toBeDefined();
+
+      const typePath = JobSchema.path('type');
+      expect(typePath).toBeDefined();
+      expect(typePath.isRequired).toBe(true);
+
+      const statusPath = JobSchema.path('status');
+      expect(statusPath).toBeDefined();
+      expect(statusPath.isRequired).toBe(true);
+      expect((statusPath as any).defaultValue).toBe('pending');
+
+      const progressPath = JobSchema.path('progress');
+      expect(progressPath).toBeDefined();
+      expect((progressPath as any).defaultValue).toBe(0);
+
       expect(JobSchema.path('message')).toBeDefined();
       expect(JobSchema.path('startedAt')).toBeDefined();
       expect(JobSchema.path('finishedAt')).toBeDefined();
       expect(JobSchema.path('error')).toBeDefined();
       expect(JobSchema.path('metadata')).toBeDefined();
+
+      // Test timestamps
+      expect(JobSchema.path('createdAt')).toBeDefined();
+      expect(JobSchema.path('updatedAt')).toBeDefined();
     });
 
     it('should have correct indexes', async () => {
@@ -84,6 +155,13 @@ describe('Gateway Schemas', () => {
 
       const indexes = JobSchema.indexes();
       expect(indexes.length).toBeGreaterThan(0);
+
+      // Check for jobId unique index
+      const jobIdIndex = indexes.find((idx: any) => idx[0].jobId === 1);
+      expect(jobIdIndex).toBeDefined();
+      if (jobIdIndex) {
+        expect(jobIdIndex[1].unique).toBe(true);
+      }
     });
   });
 
@@ -96,10 +174,22 @@ describe('Gateway Schemas', () => {
       expect(Metric.name).toBe('Metric');
 
       // Test schema paths
-      expect(MetricSchema.path('ts')).toBeDefined();
-      expect(MetricSchema.path('entity')).toBeDefined();
-      expect(MetricSchema.path('name')).toBeDefined();
-      expect(MetricSchema.path('value')).toBeDefined();
+      const tsPath = MetricSchema.path('ts');
+      expect(tsPath).toBeDefined();
+      expect(tsPath.isRequired).toBe(true);
+
+      const entityPath = MetricSchema.path('entity');
+      expect(entityPath).toBeDefined();
+      expect(entityPath.isRequired).toBe(true);
+
+      const namePath = MetricSchema.path('name');
+      expect(namePath).toBeDefined();
+      expect(namePath.isRequired).toBe(true);
+
+      const valuePath = MetricSchema.path('value');
+      expect(valuePath).toBeDefined();
+      expect(valuePath.isRequired).toBe(true);
+
       expect(MetricSchema.path('unit')).toBeDefined();
       expect(MetricSchema.path('metadata')).toBeDefined();
     });
@@ -109,6 +199,13 @@ describe('Gateway Schemas', () => {
 
       const indexes = MetricSchema.indexes();
       expect(indexes.length).toBeGreaterThan(0);
+
+      // Check for TTL index
+      const ttlIndex = indexes.find((idx: any) => idx[0].ts === 1 && idx[1].expireAfterSeconds);
+      expect(ttlIndex).toBeDefined();
+      if (ttlIndex) {
+        expect(ttlIndex[1].expireAfterSeconds).toBe(14 * 24 * 60 * 60);
+      }
     });
   });
 
@@ -122,15 +219,26 @@ describe('Gateway Schemas', () => {
 
       // Test schema paths
       expect(AuditLogSchema.path('userId')).toBeDefined();
-      expect(AuditLogSchema.path('action')).toBeDefined();
+
+      const actionPath = AuditLogSchema.path('action');
+      expect(actionPath).toBeDefined();
+      expect(actionPath.isRequired).toBe(true);
+
       expect(AuditLogSchema.path('target')).toBeDefined();
       expect(AuditLogSchema.path('targetRef')).toBeDefined();
       expect(AuditLogSchema.path('jobId')).toBeDefined();
       expect(AuditLogSchema.path('metadata')).toBeDefined();
       expect(AuditLogSchema.path('ipAddress')).toBeDefined();
       expect(AuditLogSchema.path('userAgent')).toBeDefined();
-      expect(AuditLogSchema.path('timestamp')).toBeDefined();
-      expect(AuditLogSchema.path('success')).toBeDefined();
+
+      const timestampPath = AuditLogSchema.path('timestamp');
+      expect(timestampPath).toBeDefined();
+      expect(timestampPath.isRequired).toBe(true);
+
+      const successPath = AuditLogSchema.path('success');
+      expect(successPath).toBeDefined();
+      expect((successPath as any).defaultValue).toBe(true);
+
       expect(AuditLogSchema.path('error')).toBeDefined();
     });
 
@@ -139,6 +247,20 @@ describe('Gateway Schemas', () => {
 
       const indexes = AuditLogSchema.indexes();
       expect(indexes.length).toBeGreaterThan(0);
+
+      // Check for timestamp index
+      const timestampIndex = indexes.find((idx: any) => idx[0].timestamp === -1 && Object.keys(idx[0]).length === 1);
+      expect(timestampIndex).toBeDefined();
+
+      // Check for compound indexes
+      const userIdTimestampIndex = indexes.find((idx: any) => idx[0].userId === 1 && idx[0].timestamp === -1);
+      expect(userIdTimestampIndex).toBeDefined();
+
+      const actionTimestampIndex = indexes.find((idx: any) => idx[0].action === 1 && idx[0].timestamp === -1);
+      expect(actionTimestampIndex).toBeDefined();
+
+      const targetRefTimestampIndex = indexes.find((idx: any) => idx[0].targetRef === 1 && idx[0].timestamp === -1);
+      expect(targetRefTimestampIndex).toBeDefined();
     });
   });
 
