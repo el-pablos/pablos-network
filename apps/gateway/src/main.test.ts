@@ -122,5 +122,40 @@ describe('Gateway Bootstrap', () => {
     const port = process.env.GATEWAY_PORT || '4000';
     expect(port).toBe('4000');
   });
+
+  it('should handle bootstrap errors and exit process', async () => {
+    // Mock process.exit to prevent test termination
+    const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
+
+    // Clear previous mocks
+    vi.clearAllMocks();
+    vi.resetModules();
+
+    // Mock NestFactory to throw an error
+    vi.doMock('@nestjs/core', () => ({
+      NestFactory: {
+        create: vi.fn().mockRejectedValue(new Error('Bootstrap failed')),
+      },
+    }));
+
+    // Re-import main.ts to trigger bootstrap
+    try {
+      await import('./main?t=' + Date.now());
+    } catch (error) {
+      // Expected to fail
+    }
+
+    // Wait for the error handler to execute
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // Verify error was logged and process.exit was called
+    expect(mockLogger.error).toHaveBeenCalledWith(
+      expect.objectContaining({ error: expect.any(Error) }),
+      'Failed to start gateway'
+    );
+    expect(mockExit).toHaveBeenCalledWith(1);
+
+    mockExit.mockRestore();
+  });
 });
 
