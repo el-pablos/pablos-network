@@ -125,5 +125,30 @@ describe('AI Service Index', () => {
 
     mockExit.mockRestore();
   });
+
+  it('should use default port 4001 when AI_SERVICE_PORT is not set', async () => {
+    // Reset modules and clear environment
+    vi.resetModules();
+    delete process.env.AI_SERVICE_PORT;
+
+    // Mock Fastify to capture the port
+    let capturedPort: number | undefined;
+    vi.doMock('fastify', () => ({
+      default: vi.fn(() => ({
+        register: vi.fn(),
+        get: vi.fn(),
+        listen: vi.fn((opts: any, callback: any) => {
+          capturedPort = opts.port;
+          callback(null, `http://0.0.0.0:${opts.port}`);
+        }),
+      })),
+    }));
+
+    // Re-import to trigger initialization with no port env var
+    await import('./index?t=' + Date.now());
+
+    // Verify default port 4001 was used
+    expect(capturedPort).toBe(4001);
+  });
 });
 

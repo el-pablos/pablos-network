@@ -115,12 +115,40 @@ describe('Gateway Bootstrap', () => {
   });
 
   it('should default to port 4000 if not specified', async () => {
+    // Reset modules to test with fresh import
+    vi.resetModules();
     vi.unstubAllEnvs();
     vi.stubEnv('MONGODB_URI', 'mongodb://localhost:27017/test');
     vi.stubEnv('REDIS_URL', 'redis://localhost:6379');
+    // Explicitly do NOT set GATEWAY_PORT
 
-    const port = process.env.GATEWAY_PORT || '4000';
-    expect(port).toBe('4000');
+    // Track what port was used
+    let capturedPort: number | string | undefined;
+
+    // Mock the app.listen to capture the port
+    const mockAppWithPortCapture = {
+      enableCors: vi.fn(),
+      listen: vi.fn((port: number | string) => {
+        capturedPort = port;
+        return Promise.resolve();
+      }),
+    };
+
+    // Re-mock NestFactory with port capture
+    vi.doMock('@nestjs/core', () => ({
+      NestFactory: {
+        create: vi.fn().mockResolvedValue(mockAppWithPortCapture),
+      },
+    }));
+
+    // Re-import main.ts to trigger bootstrap with no GATEWAY_PORT
+    await import('./main?t=' + Date.now());
+
+    // Wait for bootstrap to complete
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // Verify default port 4000 was used (could be number or string '4000')
+    expect(capturedPort === 4000 || capturedPort === '4000').toBe(true);
   });
 
   it('should handle bootstrap errors and exit process', async () => {
