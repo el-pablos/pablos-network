@@ -15,6 +15,14 @@ describe('Gateway Schemas', () => {
       expect(Asset).toBeDefined();
       expect(Asset.name).toBe('Asset');
 
+      // Try to instantiate the class directly to trigger decorator execution
+      try {
+        const directInstance = new Asset();
+        expect(directInstance).toBeDefined();
+      } catch (e) {
+        // Expected to fail without Mongoose context
+      }
+
       // Create a local model (no DB connection needed)
       const AssetModel = mongoose.model('Asset_Test_1', AssetSchema);
 

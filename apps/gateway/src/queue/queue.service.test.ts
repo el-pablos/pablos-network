@@ -161,6 +161,42 @@ describe('QueueService', () => {
 
       expect(status).toBeNull();
     });
+
+    it('should handle progress as a function', async () => {
+      const mockQueue = (Queue as any).mock.results[0].value;
+      mockQueue.getJob = vi.fn().mockResolvedValue({
+        id: 'job-456',
+        name: 'test-job',
+        data: {},
+        progress: vi.fn().mockResolvedValue(75), // progress as function
+        getState: vi.fn().mockResolvedValue('active'),
+        attemptsMade: 1,
+        failedReason: null,
+      });
+
+      const status = await service.getJobStatus('dns', 'job-456');
+
+      expect(status).toBeDefined();
+      expect(status.progress).toBe(75);
+    });
+
+    it('should default progress to 0 when falsy', async () => {
+      const mockQueue = (Queue as any).mock.results[0].value;
+      mockQueue.getJob = vi.fn().mockResolvedValue({
+        id: 'job-789',
+        name: 'test-job',
+        data: {},
+        progress: null, // falsy progress
+        getState: vi.fn().mockResolvedValue('waiting'),
+        attemptsMade: 0,
+        failedReason: null,
+      });
+
+      const status = await service.getJobStatus('dns', 'job-789');
+
+      expect(status).toBeDefined();
+      expect(status.progress).toBe(0);
+    });
   });
 
   describe('cancelJob', () => {
