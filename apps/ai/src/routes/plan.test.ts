@@ -170,5 +170,40 @@ describe('Plan Route', () => {
     expect(data).toHaveProperty('error');
     expect(data.error).toBe('Failed to generate plan');
   });
+
+  it('should handle include and exclude arrays', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/plan',
+      payload: {
+        command: ':scan full',
+        target: 'example.com',
+        mode: 'safe',
+        include: ['dns', 'zoomEye'],
+        exclude: ['zap'],
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const data = JSON.parse(response.body);
+    expect(data).toHaveProperty('steps');
+  });
+
+  it('should handle missing include and exclude arrays', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/plan',
+      payload: {
+        command: ':scan full',
+        target: 'example.com',
+        mode: 'safe',
+        // No include or exclude
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const data = JSON.parse(response.body);
+    expect(data).toHaveProperty('steps');
+  });
 });
 

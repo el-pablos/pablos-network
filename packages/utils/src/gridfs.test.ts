@@ -240,9 +240,20 @@ describe('GridFS', () => {
       expect(mockBucket.find).toHaveBeenCalledWith({ _id: fileId });
     });
 
+    it('should retrieve evidence metadata with string fileId', async () => {
+      const { getEvidenceMetadata } = await import('./gridfs');
+      const fileIdString = '507f1f77bcf86cd799439011';
+
+      const metadata = await getEvidenceMetadata(fileIdString);
+
+      expect(metadata).toBeDefined();
+      expect(metadata.filename).toBe('test.txt');
+      expect(mockBucket.find).toHaveBeenCalledWith({ _id: expect.any(ObjectId) });
+    });
+
     it('should throw error for non-existent file', async () => {
       const { getEvidenceMetadata } = await import('./gridfs');
-      
+
       // Mock empty result
       mockBucket.find.mockReturnValueOnce({
         toArray: vi.fn().mockResolvedValue([]),

@@ -211,6 +211,22 @@ describe('ScanController', () => {
         })
       ).rejects.toThrow(HttpException);
     });
+
+    it('should throw error for asset without _id', async () => {
+      const mockAsset = {
+        _id: null, // Invalid asset
+        fqdn: 'example.com',
+        verifiedAt: new Date(),
+      };
+
+      assetModel.findOne.mockResolvedValue(mockAsset);
+
+      await expect(
+        controller.scanWeb({
+          domain: 'example.com',
+        })
+      ).rejects.toThrow('Invalid asset');
+    });
   });
 
   describe('scanDast', () => {
@@ -276,6 +292,22 @@ describe('ScanController', () => {
           mode: 'baseline',
         })
       );
+    });
+
+    it('should throw error for asset without _id', async () => {
+      const mockAsset = {
+        _id: null, // Invalid asset
+        fqdn: 'example.com',
+        verifiedAt: new Date(),
+      };
+
+      assetModel.findOne.mockResolvedValue(mockAsset);
+
+      await expect(
+        controller.scanDast({
+          domain: 'example.com',
+        })
+      ).rejects.toThrow('Invalid asset');
     });
   });
 
