@@ -118,17 +118,22 @@ describe('Gateway Bootstrap', () => {
     // Reset modules to test with fresh import
     vi.resetModules();
     vi.unstubAllEnvs();
+
+    // Set required env vars but explicitly ensure GATEWAY_PORT is undefined
     vi.stubEnv('MONGODB_URI', 'mongodb://localhost:27017/test');
     vi.stubEnv('REDIS_URL', 'redis://localhost:6379');
-    // Explicitly do NOT set GATEWAY_PORT
+
+    // Ensure GATEWAY_PORT is not set
+    delete process.env.GATEWAY_PORT;
+    expect(process.env.GATEWAY_PORT).toBeUndefined();
 
     // Track what port was used
-    let capturedPort: number | string | undefined;
+    let capturedPort: number | undefined;
 
     // Mock the app.listen to capture the port
     const mockAppWithPortCapture = {
       enableCors: vi.fn(),
-      listen: vi.fn((port: number | string) => {
+      listen: vi.fn((port: number) => {
         capturedPort = port;
         return Promise.resolve();
       }),
@@ -147,8 +152,8 @@ describe('Gateway Bootstrap', () => {
     // Wait for bootstrap to complete
     await new Promise(resolve => setTimeout(resolve, 100));
 
-    // Verify default port 4000 was used (could be number or string '4000')
-    expect(capturedPort === 4000 || capturedPort === '4000').toBe(true);
+    // Verify default port 4000 was used
+    expect(capturedPort).toBe(4000);
   });
 
   it('should handle bootstrap errors and exit process', async () => {

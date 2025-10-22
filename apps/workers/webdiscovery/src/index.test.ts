@@ -159,6 +159,39 @@ describe('WebDiscovery Worker', () => {
     await expect(processDirsearchJob(mockJob)).rejects.toThrow('dirsearch is not installed or not in PATH');
   });
 
+  it('should use default dirsearch binary when DIRSEARCH_BIN is not set', async () => {
+    // Unset DIRSEARCH_BIN to test the default branch
+    vi.unstubAllEnvs();
+    vi.stubEnv('MONGODB_URI', 'mongodb://localhost:27017/test');
+    vi.stubEnv('REDIS_URL', 'redis://localhost:6379');
+    // Do NOT set DIRSEARCH_BIN
+    delete process.env.DIRSEARCH_BIN;
+    expect(process.env.DIRSEARCH_BIN).toBeUndefined();
+
+    // Track which binary was used in execSync (for availability check)
+    let usedBinary: string | undefined;
+
+    mockExecSync.mockImplementation((cmd: string) => {
+      const cmdStr = cmd.toString();
+      usedBinary = cmdStr.split(' ')[0];
+      // Return success for the availability check
+      return Buffer.from('');
+    });
+
+    // Process a job which will trigger checkDirsearchAvailability
+    const jobPromise = processDirsearchJob(mockJob);
+    await new Promise(resolve => setImmediate(resolve));
+
+    // Emit data and close to complete the job
+    mockProcess.stdout.emit('data', Buffer.from('200   1234B  https://example.com/test'));
+    mockProcess.emit('close', 0);
+
+    await jobPromise;
+
+    // Verify that 'dirsearch' (the default) was used in the availability check
+    expect(usedBinary).toBe('dirsearch');
+  });
+
   it('should process dirsearch job successfully with findings', async () => {
     const dirsearchOutput = `200   1234B  https://example.com/admin
 200   5678B  https://example.com/login.php`;
@@ -200,6 +233,30 @@ describe('WebDiscovery Worker', () => {
     await jobPromise;
 
     expect(mockFindingModel.findOneAndUpdate).toHaveBeenCalled();
+  });
+
+  it('should handle non-2xx status codes with low severity', async () => {
+    const dirsearchOutput = `403   1234B  https://example.com/forbidden
+301   567B  https://example.com/redirect`;
+
+    const jobPromise = processDirsearchJob(mockJob);
+    await new Promise(resolve => setImmediate(resolve));
+
+    mockProcess.stdout.emit('data', Buffer.from(dirsearchOutput));
+    mockProcess.emit('close', 0);
+
+    await jobPromise;
+
+    // Verify that findings were created with 'low' severity (not 'info')
+    expect(mockFindingModel.findOneAndUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fingerprint: expect.any(String),
+      }),
+      expect.objectContaining({
+        severity: 'low',
+      }),
+      { upsert: true, new: true }
+    );
   });
 
   it('should handle dirsearch process error with non-zero exit code', async () => {

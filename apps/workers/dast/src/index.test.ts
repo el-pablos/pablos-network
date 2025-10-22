@@ -301,6 +301,50 @@ describe('DAST Worker', () => {
       expect(mockJob.updateProgress).toHaveBeenCalledWith(100);
     });
 
+    it('should handle alert with missing name field', async () => {
+      const zapReport = {
+        site: [{
+          alerts: [
+            {
+              // name is missing
+              desc: 'Some vulnerability description',
+              riskcode: '2',
+              solution: 'Fix it',
+              reference: 'https://example.com',
+              cweid: '123',
+              wascid: '456',
+              instances: [{ uri: 'https://example.com/test' }],
+            },
+          ],
+        }],
+      };
+
+      mockFs.readFileSync.mockReturnValue(JSON.stringify(zapReport));
+
+      const jobPromise = processZAPJob(mockJob);
+      await new Promise(resolve => setTimeout(resolve, 10));
+      mockProcess.stdout.emit('data', Buffer.from('Scan complete\n'));
+      mockProcess.emit('close', 0);
+
+      const result = await jobPromise;
+
+      expect(result).toEqual({
+        success: true,
+        findingsCount: 1,
+      });
+
+      // Verify that the finding was created with 'Unknown vulnerability' as title
+      expect(mockFindingModel.findOneAndUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          fingerprint: expect.any(String),
+        }),
+        expect.objectContaining({
+          title: 'Unknown vulnerability',
+        }),
+        { upsert: true, new: true }
+      );
+    });
+
     it('should handle ZAP scan with no findings (create summary finding)', async () => {
       mockFs.readFileSync.mockReturnValue(JSON.stringify({ site: [{ alerts: [] }] }));
 

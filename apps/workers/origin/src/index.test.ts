@@ -187,6 +187,39 @@ describe('Origin Worker', () => {
     await expect(processCfHeroJob(mockJob)).rejects.toThrow('cf-hero is not installed or not in PATH');
   });
 
+  it('should use default cf-hero binary when CF_HERO_BIN is not set', async () => {
+    // Unset CF_HERO_BIN to test the default branch
+    vi.unstubAllEnvs();
+    vi.stubEnv('MONGODB_URI', 'mongodb://localhost:27017/test');
+    vi.stubEnv('REDIS_URL', 'redis://localhost:6379');
+    // Do NOT set CF_HERO_BIN
+    delete process.env.CF_HERO_BIN;
+    expect(process.env.CF_HERO_BIN).toBeUndefined();
+
+    // Track which binary was used in execSync (for availability check)
+    let usedBinary: string | undefined;
+
+    mockExecSync.mockImplementation((cmd: string) => {
+      const cmdStr = cmd.toString();
+      usedBinary = cmdStr.split(' ')[0];
+      // Return success for the availability check
+      return Buffer.from('');
+    });
+
+    // Process a job which will trigger checkCfHeroAvailability
+    const jobPromise = processCfHeroJob(mockJob);
+    await new Promise(resolve => setImmediate(resolve));
+
+    // Emit data and close to complete the job
+    mockProcess.stdout.emit('data', Buffer.from('[INFO] Test'));
+    mockProcess.emit('close', 0);
+
+    await jobPromise;
+
+    // Verify that 'cf-hero' (the default) was used in the availability check
+    expect(usedBinary).toBe('cf-hero');
+  });
+
   it('should process cf-hero job successfully with REAL IP findings', async () => {
     const cfHeroOutput = `
 [INFO] Starting CF-Hero scan for example.com
