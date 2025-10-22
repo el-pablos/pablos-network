@@ -26,7 +26,10 @@ export function createRedisClient(): IORedis {
     port,
     username,
     password,
-    tls: {}, // Redis Cloud requires TLS
+    // Note: TLS disabled for now - Redis Cloud port 17540 may not require TLS
+    // tls: {
+    //   rejectUnauthorized: false,
+    // },
     retryStrategy(times) {
       const delay = Math.min(times * 50, 2000);
       logger.warn({ times, delay }, 'Redis connection retry');

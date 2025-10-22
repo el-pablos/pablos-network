@@ -22,12 +22,12 @@ if (-not (Test-Path $LogsDir)) {
 # Check if service is already running
 function Test-ServiceRunning {
     param([string]$ServiceName)
-    
+
     $PidFile = Join-Path $PidsDir "$ServiceName.pid"
     if (Test-Path $PidFile) {
-        $Pid = Get-Content $PidFile
+        $ProcessId = Get-Content $PidFile
         try {
-            $Process = Get-Process -Id $Pid -ErrorAction SilentlyContinue
+            $Process = Get-Process -Id $ProcessId -ErrorAction SilentlyContinue
             if ($Process) {
                 return $true
             }

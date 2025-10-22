@@ -21,7 +21,7 @@ param(
     [string]$Service = 'all'
 )
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RootDir = Split-Path -Parent $ScriptDir
 $PidsDir = Join-Path $RootDir ".pids"
@@ -36,22 +36,22 @@ if (-not (Test-Path $LogsDir)) {
 }
 
 # Color output functions
-function Write-Success {
+function Write-SuccessMessage {
     param([string]$Message)
     Write-Host "✓ $Message" -ForegroundColor Green
 }
 
-function Write-Info {
+function Write-InfoMessage {
     param([string]$Message)
     Write-Host "ℹ $Message" -ForegroundColor Cyan
 }
 
-function Write-Warning {
+function Write-WarningMessage {
     param([string]$Message)
     Write-Host "⚠ $Message" -ForegroundColor Yellow
 }
 
-function Write-Error {
+function Write-ErrorMessage {
     param([string]$Message)
     Write-Host "✗ $Message" -ForegroundColor Red
 }
@@ -86,11 +86,11 @@ function Start-PablosService {
     )
     
     if (Test-ServiceRunning -ServiceName $ServiceName) {
-        Write-Warning "$ServiceName is already running"
+        Write-Host "⚠ $ServiceName is already running" -ForegroundColor Yellow
         return
     }
-    
-    Write-Info "Starting $ServiceName..."
+
+    Write-Host "ℹ Starting $ServiceName..." -ForegroundColor Cyan
     
     $LogFile = Join-Path $LogsDir "$ServiceName-$(Get-Date -Format 'yyyyMMdd-HHmmss').log"
     $PidFile = Join-Path $PidsDir "$ServiceName.pid"
@@ -98,86 +98,88 @@ function Start-PablosService {
     try {
         # Start the process in the background
         $ProcessInfo = New-Object System.Diagnostics.ProcessStartInfo
-        $ProcessInfo.FileName = "pwsh"
-        $ProcessInfo.Arguments = "-NoProfile -Command `"cd '$WorkingDir'; $Command *>&1 | Tee-Object -FilePath '$LogFile'`""
+        $ProcessInfo.FileName = "cmd.exe"
+        $CmdArgs = '/c cd /d "' + $WorkingDir + '" && ' + $Command + ' > "' + $LogFile + '" 2>&1'
+        $ProcessInfo.Arguments = $CmdArgs
         $ProcessInfo.UseShellExecute = $false
         $ProcessInfo.CreateNoWindow = $true
         $ProcessInfo.RedirectStandardOutput = $false
         $ProcessInfo.RedirectStandardError = $false
-        
+        $ProcessInfo.WorkingDirectory = $WorkingDir
+
         $Process = New-Object System.Diagnostics.Process
         $Process.StartInfo = $ProcessInfo
         $Process.Start() | Out-Null
-        
+
         # Save PID
         $Process.Id | Out-File -FilePath $PidFile -Encoding ASCII
         
         # Wait a moment to check if process started successfully
         Start-Sleep -Seconds 2
-        
+
         if ($Process.HasExited) {
-            Write-Error "$ServiceName failed to start (exited immediately)"
+            Write-Host "✗ $ServiceName failed to start (exited immediately)" -ForegroundColor Red
             Remove-Item $PidFile -Force -ErrorAction SilentlyContinue
             return
         }
-        
+
         if ($Port -gt 0) {
-            Write-Success "$ServiceName started (PID: $($Process.Id), Port: $Port)"
+            Write-Host "✓ $ServiceName started (PID: $($Process.Id), Port: $Port)" -ForegroundColor Green
         } else {
-            Write-Success "$ServiceName started (PID: $($Process.Id))"
+            Write-Host "✓ $ServiceName started (PID: $($Process.Id))" -ForegroundColor Green
         }
-        
-        Write-Info "Logs: $LogFile"
+
+        Write-Host "ℹ Logs: $LogFile" -ForegroundColor Cyan
     } catch {
-        Write-Error "Failed to start $ServiceName: $_"
+        Write-Host "✗ Failed to start ${ServiceName}: $($_.Exception.Message)" -ForegroundColor Red
     }
 }
 
 # Load environment variables from .env if it exists
 $EnvFile = Join-Path $RootDir ".env"
 if (Test-Path $EnvFile) {
-    Write-Info "Loading environment variables from .env"
+    Write-Host "ℹ Loading environment variables from .env" -ForegroundColor Cyan
     Get-Content $EnvFile | ForEach-Object {
         if ($_ -match '^\s*([^#][^=]+)=(.+)$') {
             $name = $matches[1].Trim()
-            $value = $matches[2].Trim()
+            $value = $matches[2].Trim().Trim('"').Trim("'")
             [Environment]::SetEnvironmentVariable($name, $value, "Process")
         }
     }
 }
 
 # Get ports from environment or use defaults
-$GatewayPort = if ($env:GATEWAY_PORT) { $env:GATEWAY_PORT } else { 4000 }
-$AIPort = if ($env:AI_SERVICE_PORT) { $env:AI_SERVICE_PORT } else { 4001 }
-$WebTUIPort = if ($env:WEBTUI_PORT) { $env:WEBTUI_PORT } else { 3000 }
+$GatewayPort = if ($env:GATEWAY_PORT) { [int]$env:GATEWAY_PORT } else { 4000 }
+$AIPort = if ($env:AI_SERVICE_PORT) { [int]$env:AI_SERVICE_PORT } else { 4001 }
+$WebTUIPort = if ($env:WEBTUI_PORT) { [int]$env:WEBTUI_PORT } else { 3000 }
 
-Write-Info "=== Pablos Network Service Manager ==="
-Write-Info "Starting services..."
-Write-Info ""
+Write-Host "ℹ === Pablos Network Service Manager ===" -ForegroundColor Cyan
+Write-Host "ℹ Starting services..." -ForegroundColor Cyan
+Write-Host ""
 
 # Start services based on parameter
 if ($Service -eq 'all' -or $Service -eq 'mongodb') {
     # Note: MongoDB should be running as a system service
     # This is just a check
-    Write-Info "Checking MongoDB..."
+    Write-Host "ℹ Checking MongoDB..." -ForegroundColor Cyan
     try {
         $MongoUri = if ($env:MONGODB_URI) { $env:MONGODB_URI } else { "mongodb://localhost:27017" }
-        Write-Info "MongoDB should be running at: $MongoUri"
-        Write-Warning "Please ensure MongoDB is running as a system service"
+        Write-Host "ℹ MongoDB configured: $($MongoUri.Substring(0, [Math]::Min(50, $MongoUri.Length)))..." -ForegroundColor Cyan
+        Write-Host "⚠ Please ensure MongoDB is accessible" -ForegroundColor Yellow
     } catch {
-        Write-Warning "MongoDB check skipped"
+        Write-Host "⚠ MongoDB check skipped" -ForegroundColor Yellow
     }
 }
 
 if ($Service -eq 'all' -or $Service -eq 'redis') {
     # Note: Redis should be running as a system service or Docker container
-    Write-Info "Checking Redis..."
+    Write-Host "ℹ Checking Redis..." -ForegroundColor Cyan
     try {
-        $RedisUrl = if ($env:REDIS_URL) { $env:REDIS_URL } else { "redis://localhost:6379" }
-        Write-Info "Redis should be running at: $RedisUrl"
-        Write-Warning "Please ensure Redis is running as a system service or Docker container"
+        $RedisHost = if ($env:REDIS_HOST) { $env:REDIS_HOST } else { "localhost" }
+        Write-Host "ℹ Redis configured: $RedisHost" -ForegroundColor Cyan
+        Write-Host "⚠ Please ensure Redis is accessible" -ForegroundColor Yellow
     } catch {
-        Write-Warning "Redis check skipped"
+        Write-Host "⚠ Redis check skipped" -ForegroundColor Yellow
     }
 }
 
@@ -213,8 +215,8 @@ if ($Service -eq 'all' -or $Service -eq 'webtui') {
     Start-PablosService -ServiceName "webtui" -Command "pnpm --filter @pablos/webtui start" -Port $WebTUIPort
 }
 
-Write-Info ""
-Write-Success "Service startup complete!"
-Write-Info "Run '.\status.ps1' to check service status"
-Write-Info "Run '.\logs.ps1' to view service logs"
+Write-Host ""
+Write-Host "✓ Service startup complete!" -ForegroundColor Green
+Write-Host "ℹ Run '.\scripts\status.ps1' to check service status" -ForegroundColor Cyan
+Write-Host "ℹ Run '.\scripts\logs.ps1 -Service [name]' to view service logs" -ForegroundColor Cyan
 

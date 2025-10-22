@@ -27,22 +27,22 @@ $RootDir = Split-Path -Parent $ScriptDir
 $PidsDir = Join-Path $RootDir ".pids"
 
 # Color output functions
-function Write-Success {
+function Write-SuccessMessage {
     param([string]$Message)
     Write-Host "✓ $Message" -ForegroundColor Green
 }
 
-function Write-Info {
+function Write-InfoMessage {
     param([string]$Message)
     Write-Host "ℹ $Message" -ForegroundColor Cyan
 }
 
-function Write-Warning {
+function Write-WarningMessage {
     param([string]$Message)
     Write-Host "⚠ $Message" -ForegroundColor Yellow
 }
 
-function Write-Error {
+function Write-ErrorMessage {
     param([string]$Message)
     Write-Host "✗ $Message" -ForegroundColor Red
 }
@@ -54,42 +54,42 @@ function Stop-PablosService {
     $PidFile = Join-Path $PidsDir "$ServiceName.pid"
     
     if (-not (Test-Path $PidFile)) {
-        Write-Warning "$ServiceName is not running (no PID file found)"
+        Write-WarningMessage "$ServiceName is not running (no PID file found)"
         return
     }
-    
+
     $Pid = Get-Content $PidFile
-    
+
     try {
         $Process = Get-Process -Id $Pid -ErrorAction SilentlyContinue
-        
+
         if (-not $Process) {
-            Write-Warning "$ServiceName is not running (PID $Pid not found)"
+            Write-WarningMessage "$ServiceName is not running (PID $Pid not found)"
             Remove-Item $PidFile -Force
             return
         }
-        
-        Write-Info "Stopping $ServiceName (PID: $Pid)..."
-        
+
+        Write-InfoMessage "Stopping $ServiceName (PID: $Pid)..."
+
         # Try graceful shutdown first
         $Process.CloseMainWindow() | Out-Null
         Start-Sleep -Seconds 2
-        
+
         # Check if still running
         $Process = Get-Process -Id $Pid -ErrorAction SilentlyContinue
         if ($Process) {
             # Force kill if still running
-            Write-Warning "Forcing $ServiceName to stop..."
+            Write-WarningMessage "Forcing $ServiceName to stop..."
             Stop-Process -Id $Pid -Force
             Start-Sleep -Seconds 1
         }
-        
+
         # Remove PID file
         Remove-Item $PidFile -Force
-        
-        Write-Success "$ServiceName stopped"
+
+        Write-SuccessMessage "$ServiceName stopped"
     } catch {
-        Write-Error "Failed to stop $ServiceName: $_"
+        Write-ErrorMessage "Failed to stop ${ServiceName}: $($_.Exception.Message)"
         # Clean up PID file anyway
         if (Test-Path $PidFile) {
             Remove-Item $PidFile -Force
@@ -97,9 +97,9 @@ function Stop-PablosService {
     }
 }
 
-Write-Info "=== Pablos Network Service Manager ==="
-Write-Info "Stopping services..."
-Write-Info ""
+Write-InfoMessage "=== Pablos Network Service Manager ==="
+Write-InfoMessage "Stopping services..."
+Write-InfoMessage ""
 
 # Define service list
 $Services = @()
@@ -124,7 +124,7 @@ foreach ($Svc in $Services) {
     Stop-PablosService -ServiceName $Svc
 }
 
-Write-Info ""
-Write-Success "Service shutdown complete!"
-Write-Info "Run '.\status.ps1' to verify all services are stopped"
+Write-InfoMessage ""
+Write-SuccessMessage "Service shutdown complete!"
+Write-InfoMessage "Run '.\status.ps1' to verify all services are stopped"
 

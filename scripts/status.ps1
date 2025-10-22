@@ -15,22 +15,22 @@ $RootDir = Split-Path -Parent $ScriptDir
 $PidsDir = Join-Path $RootDir ".pids"
 
 # Color output functions
-function Write-Success {
+function Write-SuccessMessage {
     param([string]$Message)
     Write-Host $Message -ForegroundColor Green
 }
 
-function Write-Info {
+function Write-InfoMessage {
     param([string]$Message)
     Write-Host $Message -ForegroundColor Cyan
 }
 
-function Write-Warning {
+function Write-WarningMessage {
     param([string]$Message)
     Write-Host $Message -ForegroundColor Yellow
 }
 
-function Write-Error {
+function Write-ErrorMessage {
     param([string]$Message)
     Write-Host $Message -ForegroundColor Red
 }
