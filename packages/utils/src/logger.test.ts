@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { logger, createLogger } from './logger';
 
 describe('Logger Utils', () => {
@@ -18,6 +18,21 @@ describe('Logger Utils', () => {
 
     it('should have correct log level', () => {
       expect(logger.level).toBeDefined();
+    });
+
+    it('should configure for production mode', async () => {
+      // Reset modules to reload logger with new env
+      vi.resetModules();
+      process.env.NODE_ENV = 'production';
+
+      const { logger: prodLogger } = await import('./logger');
+
+      expect(prodLogger).toBeDefined();
+      expect(typeof prodLogger.info).toBe('function');
+
+      // Reset back to test mode
+      vi.resetModules();
+      process.env.NODE_ENV = 'test';
     });
   });
 
