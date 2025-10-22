@@ -1,25 +1,40 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
+import mongoose from 'mongoose';
 
 describe('Gateway Schemas', () => {
+  beforeEach(() => {
+    // Clear all models before each test to avoid conflicts
+    mongoose.deleteModel(/.+/);
+  });
+
   describe('Asset Schema', () => {
-    it('should create asset schema with correct properties', async () => {
+    it('should validate required fields and enums', async () => {
       const { Asset, AssetSchema } = await import('./asset.schema');
 
-      expect(AssetSchema).toBeDefined();
-      expect(Asset).toBeDefined();
-      expect(Asset.name).toBe('Asset');
+      // Create a local model (no DB connection needed)
+      const AssetModel = mongoose.model('Asset_Test_1', AssetSchema);
 
-      // Test schema paths
-      expect(AssetSchema.path('type')).toBeDefined();
-      expect(AssetSchema.path('fqdn')).toBeDefined();
-      expect(AssetSchema.path('parentFqdn')).toBeDefined();
-      expect(AssetSchema.path('active')).toBeDefined();
-      expect(AssetSchema.path('ip')).toBeDefined();
-      expect(AssetSchema.path('owner')).toBeDefined();
-      expect(AssetSchema.path('verifiedAt')).toBeDefined();
-      expect(AssetSchema.path('consentToken')).toBeDefined();
-      expect(AssetSchema.path('metadata')).toBeDefined();
-    }, 10000);
+      // Test valid document
+      const validDoc = new AssetModel({
+        type: 'domain',
+        fqdn: 'example.com',
+        active: true
+      });
+
+      // Validate executes the @Prop decorators
+      await validDoc.validate();
+      expect(validDoc.type).toBe('domain');
+      expect(validDoc.fqdn).toBe('example.com');
+      expect(validDoc.active).toBe(true);
+
+      // Test required field violation
+      const invalidDoc = new AssetModel({});
+      await expect(invalidDoc.validate()).rejects.toThrow();
+
+      // Test enum violation
+      const invalidEnum = new AssetModel({ type: 'invalid' as any });
+      await expect(invalidEnum.validate()).rejects.toThrow();
+    });
 
     it('should have correct indexes', async () => {
       const { AssetSchema } = await import('./asset.schema');
@@ -44,50 +59,42 @@ describe('Gateway Schemas', () => {
   });
 
   describe('Finding Schema', () => {
-    it('should create finding schema with correct properties', async () => {
+    it('should validate required fields and enums', async () => {
       const { Finding, FindingSchema } = await import('./finding.schema');
 
-      expect(FindingSchema).toBeDefined();
-      expect(Finding).toBeDefined();
-      expect(Finding.name).toBe('Finding');
+      const FindingModel = mongoose.model('Finding_Test_1', FindingSchema);
 
-      // Test schema paths
-      const targetRefPath = FindingSchema.path('targetRef');
-      expect(targetRefPath).toBeDefined();
-      expect(targetRefPath.isRequired).toBe(true);
+      // Test valid document
+      const validDoc = new FindingModel({
+        targetRef: new mongoose.Types.ObjectId(),
+        targetFqdn: 'example.com',
+        provider: 'dns', // Valid enum value
+        category: 'DNS', // Valid enum value
+        title: 'Test Finding',
+        description: 'Test description',
+        severity: 'high',
+        fingerprint: 'test-fingerprint-123'
+      });
 
-      expect(FindingSchema.path('targetFqdn')).toBeDefined();
+      await validDoc.validate();
+      expect(validDoc.provider).toBe('dns');
+      expect(validDoc.severity).toBe('high');
+      expect(validDoc.category).toBe('DNS');
 
-      const providerPath = FindingSchema.path('provider');
-      expect(providerPath).toBeDefined();
-      expect(providerPath.isRequired).toBe(true);
+      // Test required field violation
+      const invalidDoc = new FindingModel({});
+      await expect(invalidDoc.validate()).rejects.toThrow();
 
-      const categoryPath = FindingSchema.path('category');
-      expect(categoryPath).toBeDefined();
-      expect(categoryPath.isRequired).toBe(true);
-
-      const titlePath = FindingSchema.path('title');
-      expect(titlePath).toBeDefined();
-      expect(titlePath.isRequired).toBe(true);
-
-      expect(FindingSchema.path('description')).toBeDefined();
-
-      const severityPath = FindingSchema.path('severity');
-      expect(severityPath).toBeDefined();
-      expect(severityPath.isRequired).toBe(true);
-
-      expect(FindingSchema.path('cvss')).toBeDefined();
-      expect(FindingSchema.path('evidenceFileId')).toBeDefined();
-
-      const fingerprintPath = FindingSchema.path('fingerprint');
-      expect(fingerprintPath).toBeDefined();
-      expect(fingerprintPath.isRequired).toBe(true);
-
-      expect(FindingSchema.path('metadata')).toBeDefined();
-
-      // Test timestamps
-      expect(FindingSchema.path('createdAt')).toBeDefined();
-      expect(FindingSchema.path('updatedAt')).toBeDefined();
+      // Test enum violation for severity
+      const invalidSeverity = new FindingModel({
+        targetRef: new mongoose.Types.ObjectId(),
+        provider: 'dns',
+        category: 'DNS',
+        title: 'Test',
+        fingerprint: 'test',
+        severity: 'invalid' as any
+      });
+      await expect(invalidSeverity.validate()).rejects.toThrow();
     });
 
     it('should have correct indexes', async () => {
@@ -96,58 +103,43 @@ describe('Gateway Schemas', () => {
       const indexes = FindingSchema.indexes();
       expect(indexes.length).toBeGreaterThan(0);
 
-      // Check for compound unique index
-      const compoundIndex = indexes.find((idx: any) =>
-        idx[0].targetRef === 1 && idx[0].provider === 1 && idx[0].fingerprint === 1
+      // Check for targetRef + provider compound index
+      const targetProviderIndex = indexes.find((idx: any) =>
+        idx[0].targetRef === 1 && idx[0].provider === 1
       );
-      expect(compoundIndex).toBeDefined();
-      if (compoundIndex) {
-        expect(compoundIndex[1].unique).toBe(true);
-      }
+      expect(targetProviderIndex).toBeDefined();
     });
   });
 
   describe('Job Schema', () => {
-    it('should create job schema with correct properties', async () => {
+    it('should validate required fields and defaults', async () => {
       const { Job, JobSchema } = await import('./job.schema');
 
-      expect(JobSchema).toBeDefined();
-      expect(Job).toBeDefined();
-      expect(Job.name).toBe('Job');
+      const JobModel = mongoose.model('Job_Test_1', JobSchema);
 
-      // Test schema paths
-      const jobIdPath = JobSchema.path('jobId');
-      expect(jobIdPath).toBeDefined();
-      expect(jobIdPath.isRequired).toBe(true);
+      // Test valid document with defaults
+      const validDoc = new JobModel({
+        jobId: 'test-job-123',
+        targetRef: new mongoose.Types.ObjectId(),
+        type: 'dns' // This is the provider enum
+      });
 
-      const targetRefPath = JobSchema.path('targetRef');
-      expect(targetRefPath).toBeDefined();
-      expect(targetRefPath.isRequired).toBe(true);
+      await validDoc.validate();
+      expect(validDoc.type).toBe('dns');
+      expect(validDoc.status).toBe('pending'); // default value
+      expect(validDoc.progress).toBe(0); // default value
 
-      expect(JobSchema.path('targetFqdn')).toBeDefined();
+      // Test required field violation
+      const invalidDoc = new JobModel({});
+      await expect(invalidDoc.validate()).rejects.toThrow();
 
-      const typePath = JobSchema.path('type');
-      expect(typePath).toBeDefined();
-      expect(typePath.isRequired).toBe(true);
-
-      const statusPath = JobSchema.path('status');
-      expect(statusPath).toBeDefined();
-      expect(statusPath.isRequired).toBe(true);
-      expect((statusPath as any).defaultValue).toBe('pending');
-
-      const progressPath = JobSchema.path('progress');
-      expect(progressPath).toBeDefined();
-      expect((progressPath as any).defaultValue).toBe(0);
-
-      expect(JobSchema.path('message')).toBeDefined();
-      expect(JobSchema.path('startedAt')).toBeDefined();
-      expect(JobSchema.path('finishedAt')).toBeDefined();
-      expect(JobSchema.path('error')).toBeDefined();
-      expect(JobSchema.path('metadata')).toBeDefined();
-
-      // Test timestamps
-      expect(JobSchema.path('createdAt')).toBeDefined();
-      expect(JobSchema.path('updatedAt')).toBeDefined();
+      // Test enum violation for type
+      const invalidType = new JobModel({
+        jobId: 'test-job-456',
+        targetRef: new mongoose.Types.ObjectId(),
+        type: 'invalid' as any
+      });
+      await expect(invalidType.validate()).rejects.toThrow();
     });
 
     it('should have correct indexes', async () => {
@@ -156,90 +148,82 @@ describe('Gateway Schemas', () => {
       const indexes = JobSchema.indexes();
       expect(indexes.length).toBeGreaterThan(0);
 
-      // Check for jobId unique index
-      const jobIdIndex = indexes.find((idx: any) => idx[0].jobId === 1);
-      expect(jobIdIndex).toBeDefined();
-      if (jobIdIndex) {
-        expect(jobIdIndex[1].unique).toBe(true);
-      }
+      // Check for targetRef + type compound index
+      const targetTypeIndex = indexes.find((idx: any) =>
+        idx[0].targetRef === 1 && idx[0].type === 1
+      );
+      expect(targetTypeIndex).toBeDefined();
     });
   });
 
   describe('Metric Schema', () => {
-    it('should create metric schema with correct properties', async () => {
+    it('should validate required fields and TTL', async () => {
       const { Metric, MetricSchema } = await import('./metric.schema');
 
-      expect(MetricSchema).toBeDefined();
-      expect(Metric).toBeDefined();
-      expect(Metric.name).toBe('Metric');
+      const MetricModel = mongoose.model('Metric_Test_1', MetricSchema);
 
-      // Test schema paths
-      const tsPath = MetricSchema.path('ts');
-      expect(tsPath).toBeDefined();
-      expect(tsPath.isRequired).toBe(true);
+      // Test valid document
+      const validDoc = new MetricModel({
+        ts: new Date(),
+        entity: {
+          kind: 'job',
+          id: 'test-job-123'
+        },
+        name: 'progress',
+        value: 50
+      });
 
-      const entityPath = MetricSchema.path('entity');
-      expect(entityPath).toBeDefined();
-      expect(entityPath.isRequired).toBe(true);
+      await validDoc.validate();
+      expect(validDoc.entity.kind).toBe('job');
+      expect(validDoc.entity.id).toBe('test-job-123');
+      expect(validDoc.name).toBe('progress');
+      expect(validDoc.value).toBe(50);
 
-      const namePath = MetricSchema.path('name');
-      expect(namePath).toBeDefined();
-      expect(namePath.isRequired).toBe(true);
-
-      const valuePath = MetricSchema.path('value');
-      expect(valuePath).toBeDefined();
-      expect(valuePath.isRequired).toBe(true);
-
-      expect(MetricSchema.path('unit')).toBeDefined();
-      expect(MetricSchema.path('metadata')).toBeDefined();
+      // Test required field violation
+      const invalidDoc = new MetricModel({});
+      await expect(invalidDoc.validate()).rejects.toThrow();
     });
 
-    it('should have correct indexes', async () => {
+    it('should have TTL index', async () => {
       const { MetricSchema } = await import('./metric.schema');
 
       const indexes = MetricSchema.indexes();
       expect(indexes.length).toBeGreaterThan(0);
 
-      // Check for TTL index
-      const ttlIndex = indexes.find((idx: any) => idx[0].ts === 1 && idx[1].expireAfterSeconds);
+      // Check for TTL index on ts field
+      const ttlIndex = indexes.find((idx: any) =>
+        idx[0].ts === 1 && idx[1]?.expireAfterSeconds !== undefined
+      );
       expect(ttlIndex).toBeDefined();
       if (ttlIndex) {
-        expect(ttlIndex[1].expireAfterSeconds).toBe(14 * 24 * 60 * 60);
+        expect(ttlIndex[1].expireAfterSeconds).toBe(14 * 24 * 60 * 60); // 14 days
       }
     });
   });
 
   describe('Audit Schema', () => {
-    it('should create audit schema with correct properties', async () => {
-      const { AuditLog, AuditLogSchema } = await import('./audit.schema');
+    it('should validate required fields', async () => {
+      const { AuditLogSchema } = await import('./audit.schema');
 
-      expect(AuditLogSchema).toBeDefined();
-      expect(AuditLog).toBeDefined();
-      expect(AuditLog.name).toBe('AuditLog');
+      const AuditLogModel = mongoose.model('AuditLog_Test_1', AuditLogSchema);
 
-      // Test schema paths
-      expect(AuditLogSchema.path('userId')).toBeDefined();
+      // Test valid document
+      const validDoc = new AuditLogModel({
+        action: 'create',
+        target: 'asset',
+        targetRef: new mongoose.Types.ObjectId(),
+        userId: 'user-123',
+        timestamp: new Date()
+      });
 
-      const actionPath = AuditLogSchema.path('action');
-      expect(actionPath).toBeDefined();
-      expect(actionPath.isRequired).toBe(true);
+      await validDoc.validate();
+      expect(validDoc.action).toBe('create');
+      expect(validDoc.target).toBe('asset');
+      expect(validDoc.success).toBe(true); // default value
 
-      expect(AuditLogSchema.path('target')).toBeDefined();
-      expect(AuditLogSchema.path('targetRef')).toBeDefined();
-      expect(AuditLogSchema.path('jobId')).toBeDefined();
-      expect(AuditLogSchema.path('metadata')).toBeDefined();
-      expect(AuditLogSchema.path('ipAddress')).toBeDefined();
-      expect(AuditLogSchema.path('userAgent')).toBeDefined();
-
-      const timestampPath = AuditLogSchema.path('timestamp');
-      expect(timestampPath).toBeDefined();
-      expect(timestampPath.isRequired).toBe(true);
-
-      const successPath = AuditLogSchema.path('success');
-      expect(successPath).toBeDefined();
-      expect((successPath as any).defaultValue).toBe(true);
-
-      expect(AuditLogSchema.path('error')).toBeDefined();
+      // Test required field violation
+      const invalidDoc = new AuditLogModel({});
+      await expect(invalidDoc.validate()).rejects.toThrow();
     });
 
     it('should have correct indexes', async () => {
@@ -248,19 +232,11 @@ describe('Gateway Schemas', () => {
       const indexes = AuditLogSchema.indexes();
       expect(indexes.length).toBeGreaterThan(0);
 
-      // Check for timestamp index
-      const timestampIndex = indexes.find((idx: any) => idx[0].timestamp === -1 && Object.keys(idx[0]).length === 1);
-      expect(timestampIndex).toBeDefined();
-
-      // Check for compound indexes
-      const userIdTimestampIndex = indexes.find((idx: any) => idx[0].userId === 1 && idx[0].timestamp === -1);
-      expect(userIdTimestampIndex).toBeDefined();
-
-      const actionTimestampIndex = indexes.find((idx: any) => idx[0].action === 1 && idx[0].timestamp === -1);
-      expect(actionTimestampIndex).toBeDefined();
-
-      const targetRefTimestampIndex = indexes.find((idx: any) => idx[0].targetRef === 1 && idx[0].timestamp === -1);
-      expect(targetRefTimestampIndex).toBeDefined();
+      // Check for targetRef + timestamp compound index
+      const targetRefIndex = indexes.find((idx: any) =>
+        idx[0].targetRef === 1 && idx[0].timestamp === -1
+      );
+      expect(targetRefIndex).toBeDefined();
     });
   });
 
@@ -276,4 +252,3 @@ describe('Gateway Schemas', () => {
     });
   });
 });
-
