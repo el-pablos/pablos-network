@@ -354,6 +354,39 @@ describe('OSINT Worker', () => {
       expect(mockLogger.info).toHaveBeenCalledWith('Connected to MongoDB');
       expect(mockLogger.info).toHaveBeenCalledWith('OSINT workers started');
     });
+
+    it('should handle startup error and exit process', async () => {
+      const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
+
+      // Reset modules to test startup error
+      vi.resetModules();
+
+      // Mock mongoose.connect to throw an error
+      vi.doMock('mongoose', () => ({
+        connect: vi.fn().mockRejectedValue(new Error('MongoDB connection failed')),
+        model: vi.fn(),
+        Schema: vi.fn(),
+      }));
+
+      // Re-import to trigger startup error
+      try {
+        await import('./index?t=' + Date.now());
+      } catch (error) {
+        // Expected to fail
+      }
+
+      // Wait for error handler to execute
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Verify error was logged and process.exit was called
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        expect.objectContaining({ error: expect.any(Error) }),
+        'Failed to start OSINT workers'
+      );
+      expect(mockExit).toHaveBeenCalledWith(1);
+
+      mockExit.mockRestore();
+    });
   });
 });
 

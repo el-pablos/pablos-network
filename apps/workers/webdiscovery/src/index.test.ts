@@ -286,5 +286,123 @@ describe('WebDiscovery Worker', () => {
 
     await expect(jobPromise).resolves.toBeDefined();
   });
+
+  it('should parse file size without unit suffix', async () => {
+    const dirsearchOutput = `200   1234   http://example.com/test.txt`;
+
+    const jobPromise = processDirsearchJob(mockJob);
+    await new Promise(resolve => setImmediate(resolve));
+
+    mockProcess.stdout.emit('data', Buffer.from(dirsearchOutput));
+    mockProcess.emit('close', 0);
+
+    await jobPromise;
+
+    expect(mockFindingModel.findOneAndUpdate).toHaveBeenCalledWith(
+      expect.any(Object),
+      expect.objectContaining({
+        metadata: expect.objectContaining({
+          size: 1234,
+        }),
+      }),
+      expect.any(Object)
+    );
+  });
+});
+
+describe('Webdiscovery Worker Initialization', () => {
+  it('should register completed event handler', async () => {
+    // Import the module to trigger initialization
+    await import('./index');
+
+    // Verify worker.on('completed') was called
+    expect(mockWorker.on).toHaveBeenCalledWith('completed', expect.any(Function));
+  });
+
+  it('should register failed event handler', async () => {
+    // Import the module to trigger initialization
+    await import('./index');
+
+    // Verify worker.on('failed') was called
+    expect(mockWorker.on).toHaveBeenCalledWith('failed', expect.any(Function));
+  });
+
+  it('should log when job completes', async () => {
+    // Import the module to trigger initialization
+    await import('./index');
+
+    // Get the completed handler
+    const completedHandler = mockWorker.on.mock.calls.find(
+      (call: any) => call[0] === 'completed'
+    )?.[1];
+
+    expect(completedHandler).toBeDefined();
+
+    // Call the handler with a mock job
+    if (completedHandler) {
+      completedHandler({ id: 'test-job-123' });
+
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        { jobId: 'test-job-123' },
+        'Job completed'
+      );
+    }
+  });
+
+  it('should log when job fails', async () => {
+    // Import the module to trigger initialization
+    await import('./index');
+
+    // Get the failed handler
+    const failedHandler = mockWorker.on.mock.calls.find(
+      (call: any) => call[0] === 'failed'
+    )?.[1];
+
+    expect(failedHandler).toBeDefined();
+
+    // Call the handler with a mock job and error
+    if (failedHandler) {
+      const testError = new Error('Job processing failed');
+      failedHandler({ id: 'test-job-456' }, testError);
+
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        { jobId: 'test-job-456', error: testError },
+        'Job failed'
+      );
+    }
+  });
+
+  it('should handle startup error and exit process', async () => {
+    const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
+
+    // Reset modules to test startup error
+    vi.resetModules();
+
+    // Mock mongoose.connect to throw an error
+    vi.doMock('mongoose', () => ({
+      connect: vi.fn().mockRejectedValue(new Error('MongoDB connection failed')),
+      model: vi.fn(),
+      Schema: vi.fn(),
+    }));
+
+    // Re-import to trigger startup error
+    try {
+      await import('./index?t=' + Date.now());
+    } catch (error) {
+      // Expected to fail
+    }
+
+    // Wait for error handler to execute
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // Verify error was logged and process.exit was called
+    expect(mockLogger.error).toHaveBeenCalledWith(
+      expect.objectContaining({ error: expect.any(Error) }),
+      'Failed to start webdiscovery worker'
+    );
+    expect(mockExit).toHaveBeenCalledWith(1);
+
+    mockExit.mockRestore();
+  });
 });
 
