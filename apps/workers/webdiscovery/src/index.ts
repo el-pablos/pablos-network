@@ -1,6 +1,6 @@
 import { Worker, Job } from 'bullmq';
 import { connect } from 'mongoose';
-import { spawn } from 'child_process';
+import { spawn, execSync } from 'child_process';
 import { redis, createLogger, generateFingerprint, saveEvidence, VerificationRequiredError } from '@pablos/utils';
 import { Finding, Job as JobModel, Asset } from './models';
 
@@ -17,7 +17,6 @@ function checkDirsearchAvailability(): string | null {
   const dirsearchBin = process.env.DIRSEARCH_BIN || 'dirsearch';
 
   try {
-    const { execSync } = require('child_process');
     execSync(`${dirsearchBin} --version`, { stdio: 'ignore' });
     return dirsearchBin;
   } catch (error) {

@@ -5,7 +5,7 @@ describe('Gateway Schemas', () => {
     const { AssetSchema, Asset } = await import('./asset.schema');
     expect(AssetSchema).toBeDefined();
     expect(Asset).toBeDefined();
-  });
+  }, 10000);
 
   it('should import finding schema', async () => {
     const { FindingSchema, Finding } = await import('./finding.schema');

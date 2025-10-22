@@ -1,8 +1,11 @@
 import { Worker, Job } from 'bullmq';
 import { connect } from 'mongoose';
-import { spawn } from 'child_process';
+import { spawn, execSync } from 'child_process';
 import { redis, createLogger, generateFingerprint, saveEvidence, VerificationRequiredError } from '@pablos/utils';
 import { Finding, Job as JobModel, Asset } from './models';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as os from 'os';
 
 const logger = createLogger('worker-origin');
 
@@ -17,7 +20,6 @@ function checkCfHeroAvailability(): string | null {
   const cfHeroBin = process.env.CF_HERO_BIN || 'cf-hero';
 
   try {
-    const { execSync } = require('child_process');
     execSync(`${cfHeroBin} -h`, { stdio: 'ignore' });
     return cfHeroBin;
   } catch (error) {
@@ -72,10 +74,8 @@ async function processCfHeroJob(job: Job<OriginJobData>) {
     ];
 
     // Create a temporary file with the domain
-    const { writeFileSync, unlinkSync } = require('fs');
-    const { join } = require('path');
-    const tmpFile = join(require('os').tmpdir(), `cf-hero-${Date.now()}.txt`);
-    writeFileSync(tmpFile, domain);
+    const tmpFile = path.join(os.tmpdir(), `cf-hero-${Date.now()}.txt`);
+    fs.writeFileSync(tmpFile, domain);
 
     args.push('-f', tmpFile);
 
@@ -105,7 +105,7 @@ async function processCfHeroJob(job: Job<OriginJobData>) {
       cfHero.on('close', (code) => {
         // Clean up temp file
         try {
-          unlinkSync(tmpFile);
+          fs.unlinkSync(tmpFile);
         } catch (e) {
           logger.warn({ error: e }, 'Failed to delete temp file');
         }
@@ -123,7 +123,7 @@ async function processCfHeroJob(job: Job<OriginJobData>) {
         logger.error({ error }, 'Failed to spawn cf-hero');
         // Clean up temp file
         try {
-          unlinkSync(tmpFile);
+          fs.unlinkSync(tmpFile);
         } catch (e) {
           // Ignore
         }
