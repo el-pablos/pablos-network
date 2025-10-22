@@ -9,19 +9,7 @@ describe('Gateway Schemas', () => {
 
   describe('Asset Schema', () => {
     it('should validate required fields and enums', async () => {
-      const { Asset, AssetSchema } = await import('./asset.schema');
-
-      // Reference the class to execute class definition
-      expect(Asset).toBeDefined();
-      expect(Asset.name).toBe('Asset');
-
-      // Try to instantiate the class directly to trigger decorator execution
-      try {
-        const directInstance = new Asset();
-        expect(directInstance).toBeDefined();
-      } catch (e) {
-        // Expected to fail without Mongoose context
-      }
+      const { AssetSchema } = await import('./asset.schema');
 
       // Create a local model (no DB connection needed)
       const AssetModel = mongoose.model('Asset_Test_1', AssetSchema);
@@ -91,11 +79,7 @@ describe('Gateway Schemas', () => {
 
   describe('Finding Schema', () => {
     it('should validate required fields and enums', async () => {
-      const { Finding, FindingSchema } = await import('./finding.schema');
-
-      // Reference the class
-      expect(Finding).toBeDefined();
-      expect(Finding.name).toBe('Finding');
+      const { FindingSchema } = await import('./finding.schema');
 
       const FindingModel = mongoose.model('Finding_Test_1', FindingSchema);
 
@@ -169,11 +153,7 @@ describe('Gateway Schemas', () => {
 
   describe('Job Schema', () => {
     it('should validate required fields and defaults', async () => {
-      const { Job, JobSchema } = await import('./job.schema');
-
-      // Reference the class
-      expect(Job).toBeDefined();
-      expect(Job.name).toBe('Job');
+      const { JobSchema } = await import('./job.schema');
 
       const JobModel = mongoose.model('Job_Test_1', JobSchema);
 
@@ -239,11 +219,7 @@ describe('Gateway Schemas', () => {
 
   describe('Metric Schema', () => {
     it('should validate required fields and TTL', async () => {
-      const { Metric, MetricSchema } = await import('./metric.schema');
-
-      // Reference the class
-      expect(Metric).toBeDefined();
-      expect(Metric.name).toBe('Metric');
+      const { MetricSchema } = await import('./metric.schema');
 
       const MetricModel = mongoose.model('Metric_Test_1', MetricSchema);
 
@@ -307,11 +283,7 @@ describe('Gateway Schemas', () => {
 
   describe('Audit Schema', () => {
     it('should validate required fields', async () => {
-      const { AuditLog, AuditLogSchema } = await import('./audit.schema');
-
-      // Reference the class
-      expect(AuditLog).toBeDefined();
-      expect(AuditLog.name).toBe('AuditLog');
+      const { AuditLogSchema } = await import('./audit.schema');
 
       const AuditLogModel = mongoose.model('AuditLog_Test_1', AuditLogSchema);
 

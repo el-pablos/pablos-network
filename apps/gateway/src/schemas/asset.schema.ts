@@ -1,38 +1,59 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Schema as MongooseSchema, Document } from 'mongoose';
 import type { AssetType } from '@pablos/contracts';
 
-@Schema({ timestamps: true, collection: 'assets' })
-export class Asset extends Document {
-  @Prop({ required: true, type: String, enum: ['domain', 'subdomain', 'ip'] })
-  type!: AssetType;
-
-  @Prop({ type: String, index: true })
+export interface AssetDocument extends Document {
+  type: AssetType;
   fqdn?: string;
-
-  @Prop({ type: String, index: true })
   parentFqdn?: string;
-
-  @Prop({ type: Boolean, default: true, index: true })
-  active!: boolean;
-
-  @Prop({ type: [String], default: [] })
-  ip!: string[];
-
-  @Prop({ type: String })
+  active: boolean;
+  ip: string[];
   owner?: string;
-
-  @Prop({ type: Date })
   verifiedAt?: Date;
-
-  @Prop({ type: String })
   consentToken?: string;
-
-  @Prop({ type: Object })
   metadata?: Record<string, any>;
 }
 
-export const AssetSchema = SchemaFactory.createForClass(Asset);
+export class Asset {}
+
+export const AssetSchema = new MongooseSchema({
+  type: {
+    type: String,
+    required: true,
+    enum: ['domain', 'subdomain', 'ip']
+  },
+  fqdn: {
+    type: String,
+    index: true
+  },
+  parentFqdn: {
+    type: String,
+    index: true
+  },
+  active: {
+    type: Boolean,
+    default: true,
+    index: true
+  },
+  ip: {
+    type: [String],
+    default: []
+  },
+  owner: {
+    type: String
+  },
+  verifiedAt: {
+    type: Date
+  },
+  consentToken: {
+    type: String
+  },
+  metadata: {
+    type: MongooseSchema.Types.Mixed
+  },
+}, {
+  timestamps: true,
+  collection: 'assets'
+});
 
 // Unique index on fqdn
 AssetSchema.index({ fqdn: 1 }, { unique: true, sparse: true });

@@ -1,44 +1,72 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types } from 'mongoose';
+import { Schema as MongooseSchema, Document, Types } from 'mongoose';
 import type { JobStatus, Provider } from '@pablos/contracts';
 
-@Schema({ timestamps: true, collection: 'jobs' })
-export class Job extends Document {
-  @Prop({ required: true, type: String })
-  jobId!: string;
-
-  @Prop({ required: true, type: String, enum: ['zoomEye', 'binaryEdge', 'dirsearch', 'zap', 'dns', 'reverseip', 'domainwatch', 'policy', 'seo', 'media'] })
-  type!: Provider;
-
-  @Prop({ required: true, type: Types.ObjectId, ref: 'Asset' })
-  targetRef!: Types.ObjectId;
-
-  @Prop({ type: String })
+export interface JobDocument extends Document {
+  jobId: string;
+  type: Provider;
+  targetRef: Types.ObjectId;
   targetFqdn?: string;
-
-  @Prop({ required: true, type: String, enum: ['pending', 'running', 'done', 'failed', 'cancelled'], default: 'pending', index: true })
-  status!: JobStatus;
-
-  @Prop({ type: Number, default: 0, min: 0, max: 100 })
-  progress!: number;
-
-  @Prop({ type: String })
+  status: JobStatus;
+  progress: number;
   message?: string;
-
-  @Prop({ type: String })
   error?: string;
-
-  @Prop({ type: Date })
   startedAt?: Date;
-
-  @Prop({ type: Date })
   finishedAt?: Date;
-
-  @Prop({ type: Object })
   metadata?: Record<string, any>;
 }
 
-export const JobSchema = SchemaFactory.createForClass(Job);
+export class Job {}
+
+export const JobSchema = new MongooseSchema({
+  jobId: {
+    type: String,
+    required: true
+  },
+  type: {
+    type: String,
+    required: true,
+    enum: ['zoomEye', 'binaryEdge', 'dirsearch', 'zap', 'dns', 'reverseip', 'domainwatch', 'policy', 'seo', 'media']
+  },
+  targetRef: {
+    type: MongooseSchema.Types.ObjectId,
+    required: true,
+    ref: 'Asset'
+  },
+  targetFqdn: {
+    type: String
+  },
+  status: {
+    type: String,
+    required: true,
+    enum: ['pending', 'running', 'done', 'failed', 'cancelled'],
+    default: 'pending',
+    index: true
+  },
+  progress: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 100
+  },
+  message: {
+    type: String
+  },
+  error: {
+    type: String
+  },
+  startedAt: {
+    type: Date
+  },
+  finishedAt: {
+    type: Date
+  },
+  metadata: {
+    type: MongooseSchema.Types.Mixed
+  },
+}, {
+  timestamps: true,
+  collection: 'jobs'
+});
 
 // Indexes for efficient queries
 JobSchema.index({ jobId: 1 }, { unique: true });

@@ -2,7 +2,7 @@ import { Controller, Get, Res, Query } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { FastifyReply } from 'fastify';
-import { Metric } from '../schemas';
+import { Metric, MetricDocument } from '../schemas';
 import { createLogger } from '@pablos/utils';
 
 const logger = createLogger('progress-controller');
@@ -10,7 +10,7 @@ const logger = createLogger('progress-controller');
 @Controller('progress')
 export class ProgressController {
   constructor(
-    @InjectModel(Metric.name) private metricModel: Model<Metric>
+    @InjectModel(Metric.name) private metricModel: Model<MetricDocument>
   ) {}
 
   @Get('stream')

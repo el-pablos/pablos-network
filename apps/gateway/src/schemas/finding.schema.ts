@@ -1,44 +1,75 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types } from 'mongoose';
+import { Schema as MongooseSchema, Document, Types } from 'mongoose';
 import type { Provider, Category, Severity } from '@pablos/contracts';
 
-@Schema({ timestamps: true, collection: 'findings' })
-export class Finding extends Document {
-  @Prop({ required: true, type: Types.ObjectId, ref: 'Asset', index: true })
-  targetRef!: Types.ObjectId;
-
-  @Prop({ type: String })
+export interface FindingDocument extends Document {
+  targetRef: Types.ObjectId;
   targetFqdn?: string;
-
-  @Prop({ required: true, type: String, enum: ['zoomEye', 'binaryEdge', 'dirsearch', 'zap', 'dns', 'reverseip', 'domainwatch', 'policy', 'seo', 'media'] })
-  provider!: Provider;
-
-  @Prop({ required: true, type: String, enum: ['DNS', 'WEB', 'NET', 'OSINT', 'POLICY', 'SEO', 'MEDIA'], index: true })
-  category!: Category;
-
-  @Prop({ required: true, type: String })
-  title!: string;
-
-  @Prop({ type: String })
+  provider: Provider;
+  category: Category;
+  title: string;
   description?: string;
-
-  @Prop({ required: true, type: String, enum: ['info', 'low', 'medium', 'high', 'critical'], index: true })
-  severity!: Severity;
-
-  @Prop({ type: Number, min: 0, max: 10 })
+  severity: Severity;
   cvss?: number;
-
-  @Prop({ type: Types.ObjectId })
   evidenceFileId?: Types.ObjectId;
-
-  @Prop({ required: true, type: String })
-  fingerprint!: string;
-
-  @Prop({ type: Object })
+  fingerprint: string;
   metadata?: Record<string, any>;
 }
 
-export const FindingSchema = SchemaFactory.createForClass(Finding);
+export class Finding {}
+
+export const FindingSchema = new MongooseSchema({
+  targetRef: {
+    type: MongooseSchema.Types.ObjectId,
+    required: true,
+    ref: 'Asset',
+    index: true
+  },
+  targetFqdn: {
+    type: String
+  },
+  provider: {
+    type: String,
+    required: true,
+    enum: ['zoomEye', 'binaryEdge', 'dirsearch', 'zap', 'dns', 'reverseip', 'domainwatch', 'policy', 'seo', 'media']
+  },
+  category: {
+    type: String,
+    required: true,
+    enum: ['DNS', 'WEB', 'NET', 'OSINT', 'POLICY', 'SEO', 'MEDIA'],
+    index: true
+  },
+  title: {
+    type: String,
+    required: true
+  },
+  description: {
+    type: String
+  },
+  severity: {
+    type: String,
+    required: true,
+    enum: ['info', 'low', 'medium', 'high', 'critical'],
+    index: true
+  },
+  cvss: {
+    type: Number,
+    min: 0,
+    max: 10
+  },
+  evidenceFileId: {
+    type: MongooseSchema.Types.ObjectId
+  },
+  fingerprint: {
+    type: String,
+    required: true
+  },
+  metadata: {
+    type: MongooseSchema.Types.Mixed
+  },
+}, {
+  timestamps: true,
+  collection: 'findings'
+});
 
 // Unique compound index for idempotency
 FindingSchema.index(

@@ -1,7 +1,7 @@
 import { Controller, Post, Body, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Asset, Job, AuditLog } from '../schemas';
+import { Asset, AssetDocument, Job, JobDocument, AuditLog, AuditLogDocument } from '../schemas';
 import { QueueService } from '../queue/queue.service';
 import { VerificationRequiredError, createLogger } from '@pablos/utils';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
@@ -14,13 +14,13 @@ const logger = createLogger('scan-controller');
 @Controller('scan')
 export class ScanController {
   constructor(
-    @InjectModel(Asset.name) private assetModel: Model<Asset>,
-    @InjectModel(Job.name) private jobModel: Model<Job>,
-    @InjectModel(AuditLog.name) private auditModel: Model<AuditLog>,
+    @InjectModel(Asset.name) private assetModel: Model<AssetDocument>,
+    @InjectModel(Job.name) private jobModel: Model<JobDocument>,
+    @InjectModel(AuditLog.name) private auditModel: Model<AuditLogDocument>,
     private queueService: QueueService
   ) {}
 
-  private async requireVerification(domain: string, scanType: string): Promise<Asset> {
+  private async requireVerification(domain: string, scanType: string): Promise<AssetDocument> {
     const asset = await this.assetModel.findOne({ fqdn: domain });
     
     if (!asset) {

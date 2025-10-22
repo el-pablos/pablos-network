@@ -1,7 +1,7 @@
 import { Controller, Get, Query, Param, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Finding, Asset } from '../schemas';
+import { Finding, FindingDocument, Asset, AssetDocument } from '../schemas';
 import { FindingQuerySchema } from '@pablos/contracts';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { createLogger } from '@pablos/utils';
@@ -12,8 +12,8 @@ const logger = createLogger('findings-controller');
 @Controller('findings')
 export class FindingsController {
   constructor(
-    @InjectModel(Finding.name) private findingModel: Model<Finding>,
-    @InjectModel(Asset.name) private assetModel: Model<Asset>
+    @InjectModel(Finding.name) private findingModel: Model<FindingDocument>,
+    @InjectModel(Asset.name) private assetModel: Model<AssetDocument>
   ) {}
 
   @Get()

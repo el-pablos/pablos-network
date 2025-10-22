@@ -1,7 +1,7 @@
 import { Controller, Post, Body, Get, Param, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Asset, AuditLog } from '../schemas';
+import { Asset, AssetDocument, AuditLog, AuditLogDocument } from '../schemas';
 import { CreateAssetSchema, VerifyAssetSchema } from '@pablos/contracts';
 import { generateConsentToken, createLogger } from '@pablos/utils';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
@@ -12,8 +12,8 @@ const logger = createLogger('scope-controller');
 @Controller('scope')
 export class ScopeController {
   constructor(
-    @InjectModel(Asset.name) private assetModel: Model<Asset>,
-    @InjectModel(AuditLog.name) private auditModel: Model<AuditLog>
+    @InjectModel(Asset.name) private assetModel: Model<AssetDocument>,
+    @InjectModel(AuditLog.name) private auditModel: Model<AuditLogDocument>
   ) {}
 
   @Post()

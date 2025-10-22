@@ -1,7 +1,7 @@
 import { Controller, Get, Param, Query, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Asset } from '../schemas';
+import { Asset, AssetDocument } from '../schemas';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { createLogger } from '@pablos/utils';
 
@@ -11,7 +11,7 @@ const logger = createLogger('assets-controller');
 @Controller('assets')
 export class AssetsController {
   constructor(
-    @InjectModel(Asset.name) private assetModel: Model<Asset>
+    @InjectModel(Asset.name) private assetModel: Model<AssetDocument>
   ) {}
 
   @Get(':domain/subs')

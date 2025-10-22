@@ -1,43 +1,64 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types } from 'mongoose';
+import { Schema as MongooseSchema, Document, Types } from 'mongoose';
 
-@Schema({ timestamps: false, collection: 'audit_logs' })
-export class AuditLog extends Document {
-  @Prop({ type: String })
+export interface AuditLogDocument extends Document {
   userId?: string;
-
-  @Prop({ required: true, type: String, index: true })
-  action!: string;
-
-  @Prop({ type: String })
+  action: string;
   target?: string;
-
-  @Prop({ type: Types.ObjectId })
   targetRef?: Types.ObjectId;
-
-  @Prop({ type: String })
   jobId?: string;
-
-  @Prop({ type: Object })
   metadata?: Record<string, any>;
-
-  @Prop({ type: String })
   ipAddress?: string;
-
-  @Prop({ type: String })
   userAgent?: string;
-
-  @Prop({ required: true, type: Date, index: true })
-  timestamp!: Date;
-
-  @Prop({ type: Boolean, default: true })
-  success!: boolean;
-
-  @Prop({ type: String })
+  timestamp: Date;
+  success: boolean;
   error?: string;
 }
 
-export const AuditLogSchema = SchemaFactory.createForClass(AuditLog);
+export class AuditLog {}
+
+export const AuditLogSchema = new MongooseSchema({
+  userId: {
+    type: String
+  },
+  action: {
+    type: String,
+    required: true,
+    index: true
+  },
+  target: {
+    type: String
+  },
+  targetRef: {
+    type: MongooseSchema.Types.ObjectId
+  },
+  jobId: {
+    type: String
+  },
+  metadata: {
+    type: MongooseSchema.Types.Mixed
+  },
+  ipAddress: {
+    type: String
+  },
+  userAgent: {
+    type: String
+  },
+  timestamp: {
+    type: Date,
+    required: true,
+    index: true
+  },
+  success: {
+    type: Boolean,
+    default: true
+  },
+  error: {
+    type: String
+  },
+}, {
+  timestamps: false,
+  collection: 'audit_logs'
+});
 
 // Indexes for audit queries
 AuditLogSchema.index({ timestamp: -1 });
