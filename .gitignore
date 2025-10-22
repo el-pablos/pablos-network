@@ -21,6 +21,9 @@ logs/
 npm-debug.log*
 pnpm-debug.log*
 
+# Process management
+.pids/
+
 # OS
 .DS_Store
 Thumbs.db
@@ -41,7 +44,8 @@ coverage/
 *.tsbuildinfo
 .cache/
 
-# Documentation (exclude all .md except README.md)
+# Documentation (exclude all .md except README.md and scripts/README.md)
 *.md
 !README.md
+!scripts/README.md
 
